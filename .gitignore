@@ -1,0 +1,6 @@
+## Ignore Visual Studio Code folder .vscode, 
+## build files, executables and datasets folder 
+.vscode
+build
+exe
+datasets
