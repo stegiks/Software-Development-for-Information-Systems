@@ -2,6 +2,7 @@
 #define VECTOR_PARSER_H
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -15,6 +16,9 @@ class VectorParser{
 private:
     std::string m_file_path;
     FileFormat m_file_format;
+
+    template <typename T>
+    std::vector<std::vector<T>> parseVecs();
 
 public:
     VectorParser(std::string file_path, FileFormat file_format) : m_file_path(file_path), m_file_format(file_format){}
