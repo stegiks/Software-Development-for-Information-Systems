@@ -3,6 +3,6 @@
 ## and Visual Studio Live Share configuration file .vsls.json 
 .vscode
 build
-exe
+bin
 datasets
 .vsls.json

@@ -1,6 +1,12 @@
 #ifndef DEFS_H
 #define DEFS_H
 
+#include <iostream>
+#include <string>
+#include <set>
+#include <vector>
+#include <fstream>
+
 #define RED "\033[0;31m"
 #define GREEN "\033[0;32m"
 #define YELLOW "\033[0;33m"
