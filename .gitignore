@@ -1,6 +1,8 @@
 ## Ignore Visual Studio Code folder .vscode, 
-## build files, executables and datasets folder 
+## build files, executables, datasets folder
+## and Visual Studio Live Share configuration file .vsls.json 
 .vscode
 build
 exe
 datasets
+.vsls.json
