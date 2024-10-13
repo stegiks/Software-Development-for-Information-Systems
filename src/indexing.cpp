@@ -1,6 +1,5 @@
 #include "ann.h"
 
-
 // Return the Euclidean distance between two points
 template <typename datatype>
 float ANN<datatype>::calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b){
@@ -11,26 +10,53 @@ float ANN<datatype>::calculateDistance(const std::vector<datatype>& a, const std
     return std::sqrt(distance);
 }
 
+// Prune the set to retain only the k closest points
 template <typename datatype>
-ANN<datatype>::ANN(){}
-
-template <typename datatype>
-void ANN<datatype>::pruneSet(std::set<std::vector<datatype>> myset,int k){
+void ANN<datatype>::pruneSet(std::set<std::vector<datatype>> myset, int k){
     
-    if (myset.size() <= static_cast<size_t>(k)) {
+    if(myset.size() <= static_cast<size_t>(k))
         return;
-    }
+
+    // Erase all elements after the kth element
     auto start = myset.begin();
-    std::advance(start,myset.size()-k);
-    myset.erase(myset.begin(),start);
+    std::advance(start, k);
+    myset.erase(start, myset.end());
     return;
     
 }
 
+// Return the neighbors of a point
 template <typename datatype>
 std::set<std::vector<datatype>> ANN<datatype>::neighbourNodes(std::vector<datatype> point){
-
+    std::set<std::vector<datatype>> neighbours;
+    
+    // Retrieve the node index for the point
+    int node = point_to_node_map[point];
+    std::vector<int> neighbour_indices = graph.getNeighbours(node);
+    
+    // Convert the neighbor indices back to points
+    for(int index : neighbour_indices){
+        neighbours.insert(node_to_point_map[index]);
+    }
+    
+    return neighbours;
 }
+
+
+template <typename datatype>
+ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points) {
+    // Initialize the graph with the number of nodes equal to the number of points
+    Graph graph(points.size());
+    int node_index = 0;
+
+    // Populate the node_to_point_map and point_to_node_map
+    for(const auto& point : points){
+        node_to_point_map.push_back(point);
+        node_index++;
+        point_to_node_map[point] = node_index;
+    }
+}
+
 
 // Greedy search algorithm to find the nearest neighbours
 template <typename datatype>
@@ -47,10 +73,9 @@ std::vector<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector
 
     while (true) {
         std::set<std::vector<datatype>, decltype(compare)> difference(compare);
-
-        // Calculate the difference between nns and visited
+        
         std::set_difference(nns.begin(), nns.end(), visited.begin(), visited.end(),
-                            std::back_inserter(difference));
+                    std::inserter(difference, difference.end()));
 
         // If the difference is empty, break out of the loop
         if (difference.empty()) {
@@ -60,22 +85,19 @@ std::vector<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector
         // Get the index of the closest point
         std::vector<datatype> closest_point = *difference.begin();
         
-
-        // TODO Make Neighbors Function
-        // neighbourNodes(closest_point)
-        std::set<std::vector<datatype>> neighbours;
+        // Get the neighbors of the closest point
+        std::set<std::vector<datatype>> neighbours = ANN::neighbourNodes(closest_point);
         
 
         // Update nns set with neighbours of closest_point
-        for(auto i=neighbours.begin;i++;i<=neighbours.end()){
-            nns.insert(i);
+        for(auto i=neighbours.begin; i++; i<=neighbours.end()){
+            nns.insert(*i);
         }
 
         //Update Visited set with closest_point
-
         visited.insert(closest_point);
 
-        if(nns.size()>upper_limit){
+        if(nns.size() > upper_limit){
             //Update nns to retain upper_limit closest points
             ANN::pruneSet(nns,upper_limit);
         }
@@ -93,7 +115,7 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
 
     for(auto i=neighbours.begin;i++;i<=neighbours.end()){
         if(ANN::calculateDistance(point,i) < alpha){
-            candidate_set.insert(i);
+            candidate_set.insert(*i);
         }
     }
 

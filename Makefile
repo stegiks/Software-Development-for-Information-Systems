@@ -17,7 +17,7 @@ ARGS :=
 
 # Targets
 SRC_FILES := $(wildcard $(SRC)/*.cpp)
-OBJ_FILES := $(patsubst $(SRC)/%.cππ,$(BUILD)/%.o,$(SRC_FILES))
+OBJ_FILES := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(SRC_FILES))
 
 # Compilation
 all: $(BIN)/main
