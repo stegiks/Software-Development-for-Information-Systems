@@ -114,20 +114,42 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
     std::set<std::vector<datatype>> neighbours = ANN::neighbourNodes(point);
 
     for(auto i=neighbours.begin;i++;i<=neighbours.end()){
-        if(ANN::calculateDistance(point,i) < alpha){
-            candidate_set.insert(*i);
-        }
+        candidate_set.insert(*i);
     }
 
-    // Remove point p from candidate_set
+    // Remove point p from candidate_set and prune all its neighbours
     candidate_set.erase(point);
+    this->G.removeNeighbours(this->point_to_node_map[point]);
 
-    // TODO: Erase Neighbours of p from Graph
+
+    // Reorder the candidate_set based on the distance from the query point
+    std::vector<std::vector<datatype>> candidate_vector(candidate_set.begin(), candidate_set.end());
+
+    auto compare = [&](const std::vector<datatype>& a, const std::vector<datatype>& b) {
+        return this->calculateDistance(a, point) < this->calculateDistance(b, point);
+    };
+
+    // Sort the candidate_vector using the custom compare function
+    std::sort(candidate_vector.begin(), candidate_vector.end(), compare);
+
+    // Clear the candidate_set and insert the sorted candidates back
+    candidate_set.clear();
+    candidate_set.insert(candidate_vector.begin(), candidate_vector.end());
 
     while(true){
         if(candidate_set.size() ==0 ){
             break;
         }
-        std::set<std::vector<datatype>> difference
+        std::vector<datatype> closest_point = *candidate_set.begin();
+        this->G.addEdge(this->point_to_node_map[point],this->point_to_node_map[closest_point]);
+
+        if(this->G.countNeighbours(this->point_to_node_map[point]) > degree_bound){
+            break;
+        }
+        for(auto i=candidate_set.begin;i++;i<=candidate_set.end()){
+            if(this->calculateDistance(*i,point) <= alpha*this->calculateDistance(closest_point,point)){
+                candidate_set.erase(*i);
+            }
+        }
     }
 }

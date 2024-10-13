@@ -25,6 +25,10 @@ public:
     void removeEdge(int a, int b);
     
     //Function to get neighbours of a node
-    std::vector<int> getNeighbours(int a);
+    std::vector<int> getNeighbours(int node);
+
+    void Graph::removeNeighbours(int node);
+
+    int Graph::countNeighbours(int node);
 };
 #endif // utils.h

@@ -30,3 +30,19 @@ std::vector<int> Graph::getNeighbours(int node){
     }
     return neighbours;
 }
+
+void Graph::removeNeighbours(int node){
+    for(int i = 0; i < adj_matrix[node].size(); i++){
+        adj_matrix[node][i] = 0;
+    }
+}
+
+int Graph::countNeighbours(int node){
+    int count = 0;
+    for(int i = 0; i < adj_matrix[node].size(); i++){
+        if(adj_matrix[node][i] == 1){
+            count++;
+        }
+    }
+    return count;
+}
