@@ -6,17 +6,20 @@
 #include <set>
 #include <unordered_map>
 #include "utils_ann.h"
+#define FNV_BASIS 0x811c9dc5
+#define FNV_PRIME 0x01000193
 
-// ! CHANGE THE OPERATIONS MAYBE 
+// FVN-1 Hash Function.
 template <typename datatype>
 struct VectorHash{
     std::size_t operator()(const std::vector<datatype>& vec) const{
-        std::size_t seed = vec.size();
+        std::size_t hash_seed = FNV_BASIS;
         for(auto& coordinate : vec){
             std::hash<datatype> hasher;
-            seed ^= hasher(coordinate) + 0x06101425 + (seed << 6) + (seed >> 3);
+            hash_seed *= FNV_PRIME;
+            hash_seed ^= hasher(coordinate);
         }
-        return seed;
+        return hash_seed;
     }
 };
 
@@ -27,7 +30,7 @@ private:
     static Graph G;
 
     std::vector<std::vector<datatype>> node_to_point_map;
-    std::unordered_map<std::vector<datatype>, int, VectorHash> point_to_node_map;
+    std::unordered_map<std::vector<datatype>, int, VectorHash<datatype>> point_to_node_map;
 
     float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b);
     void pruneSet(std::set<std::vector<datatype>> myset, int k);
