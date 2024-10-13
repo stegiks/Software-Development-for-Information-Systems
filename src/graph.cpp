@@ -1,11 +1,11 @@
-#include "utils_ann.h"
+#include "graph.h"
 
-Graph::Graph(int n){
+Graph::Graph(std::size_t n){
     // Randomly generate a graph with n nodes
     srand(time(NULL));
     adj_matrix = std::vector<std::vector<int>>(n, std::vector<int>(n, 0));
-    for(int i = 0; i < n; i++){
-        for(int j = i+1; j < n; j++){
+    for(std::size_t i = 0; i < n; i++){
+        for(std::size_t j = i+1; j < n; j++){
             if(rand() % 2 == 1){
                 addEdge(i, j);
             }
@@ -23,7 +23,7 @@ void Graph::removeEdge(int a, int b){
 
 std::vector<int> Graph::getNeighbours(int node){
     std::vector<int> neighbours;
-    for(int i = 0; i < adj_matrix[node].size(); i++){
+    for(std::size_t i = 0; i < adj_matrix[node].size(); i++){
         if(adj_matrix[node][i] == 1){
             neighbours.push_back(i);
         }
@@ -32,14 +32,14 @@ std::vector<int> Graph::getNeighbours(int node){
 }
 
 void Graph::removeNeighbours(int node){
-    for(int i = 0; i < adj_matrix[node].size(); i++){
+    for(std::size_t i = 0; i < adj_matrix[node].size(); i++){
         adj_matrix[node][i] = 0;
     }
 }
 
 int Graph::countNeighbours(int node){
     int count = 0;
-    for(int i = 0; i < adj_matrix[node].size(); i++){
+    for(std::size_t i = 0; i < adj_matrix[node].size(); i++){
         if(adj_matrix[node][i] == 1){
             count++;
         }

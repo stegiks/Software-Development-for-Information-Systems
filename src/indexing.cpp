@@ -12,9 +12,10 @@ float ANN<datatype>::calculateDistance(const std::vector<datatype>& a, const std
 
 // Prune the set to retain only the k closest points
 template <typename datatype>
-void ANN<datatype>::pruneSet(std::set<std::vector<datatype>> myset, int k){
+template <typename Compare>
+void ANN<datatype>::pruneSet(std::set<std::vector<datatype>, Compare>& myset, int k){
     
-    if(myset.size() <= static_cast<size_t>(k))
+    if(myset.size() <= static_cast<std::size_t>(k))
         return;
 
     // Erase all elements after the kth element
@@ -32,7 +33,7 @@ std::set<std::vector<datatype>> ANN<datatype>::neighbourNodes(std::vector<dataty
     
     // Retrieve the node index for the point
     int node = point_to_node_map[point];
-    std::vector<int> neighbour_indices = graph.getNeighbours(node);
+    std::vector<int> neighbour_indices = this->G.getNeighbours(node);
     
     // Convert the neighbor indices back to points
     for(int index : neighbour_indices){
@@ -60,7 +61,7 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points) {
 
 // Greedy search algorithm to find the nearest neighbours
 template <typename datatype>
-std::vector<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
+std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
     // Create a lambda that will compare the 
     // distance between two points and use it to sort the set
     auto compare = [&](std::vector<datatype>& a, std::vector<datatype>& b){
@@ -88,32 +89,36 @@ std::vector<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector
         // Get the neighbors of the closest point
         std::set<std::vector<datatype>> neighbours = ANN::neighbourNodes(closest_point);
         
-
         // Update nns set with neighbours of closest_point
-        for(auto i=neighbours.begin; i++; i<=neighbours.end()){
+        for(auto i = neighbours.begin(); i != neighbours.end(); i++){
             nns.insert(*i);
         }
 
         //Update Visited set with closest_point
         visited.insert(closest_point);
 
-        if(nns.size() > upper_limit){
+        if(nns.size() > static_cast<std::size_t>(upper_limit)){
             //Update nns to retain upper_limit closest points
-            ANN::pruneSet(nns,upper_limit);
+            ANN::pruneSet(nns, upper_limit);
         }
         
     }
 
-    // Return k closest points to Xq
-    ANN::pruneSet(nns,k);
-    return nns;
+    // Return k closest points to Xq, using regular set
+    ANN::pruneSet(nns, k);
+    std::set<std::vector<datatype>> nns_copy;
+    for(const auto& vec : nns){
+        nns_copy.insert(vec);
+    }
+    nns.clear();
+    return nns_copy;
 }
 
 template <typename datatype>
-void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>> candidate_set,int alpha,int degree_bound/*,graph G*/){
+void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>> candidate_set, int alpha, int degree_bound){
     std::set<std::vector<datatype>> neighbours = ANN::neighbourNodes(point);
 
-    for(auto i=neighbours.begin;i++;i<=neighbours.end()){
+    for(auto i = neighbours.begin(); i != neighbours.end(); i++){
         candidate_set.insert(*i);
     }
 
@@ -121,23 +126,9 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
     candidate_set.erase(point);
     this->G.removeNeighbours(this->point_to_node_map[point]);
 
-
-    // Reorder the candidate_set based on the distance from the query point
-    std::vector<std::vector<datatype>> candidate_vector(candidate_set.begin(), candidate_set.end());
-
-    auto compare = [&](const std::vector<datatype>& a, const std::vector<datatype>& b) {
-        return this->calculateDistance(a, point) < this->calculateDistance(b, point);
-    };
-
-    // Sort the candidate_vector using the custom compare function
-    std::sort(candidate_vector.begin(), candidate_vector.end(), compare);
-
-    // Clear the candidate_set and insert the sorted candidates back
-    candidate_set.clear();
-    candidate_set.insert(candidate_vector.begin(), candidate_vector.end());
-
     while(true){
-        if(candidate_set.size() ==0 ){
+
+        if(candidate_set.size() == 0){
             break;
         }
         std::vector<datatype> closest_point = *candidate_set.begin();
@@ -146,10 +137,18 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
         if(this->G.countNeighbours(this->point_to_node_map[point]) > degree_bound){
             break;
         }
-        for(auto i=candidate_set.begin;i++;i<=candidate_set.end()){
-            if(this->calculateDistance(*i,point) <= alpha*this->calculateDistance(closest_point,point)){
+
+        for(auto i = candidate_set.begin(); i != candidate_set.end(); i++){
+            if(alpha * this->calculateDistance(closest_point, *i) <= this->calculateDistance(*i, point)){
                 candidate_set.erase(*i);
             }
         }
     }
 }
+
+// Explicit Instantiation of ANN class for datatype int
+template class ANN<int>;
+// // Explicit Instantiation of ANN class for datatype float
+// template class ANN<float>;
+// // Explicit Instantiation of ANN class for datatype unsigned char
+// template class ANN<unsigned char>;

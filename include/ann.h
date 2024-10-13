@@ -5,7 +5,10 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
-#include "utils_ann.h"
+#include <cmath>
+#include <algorithm>
+#include <iterator> 
+#include "graph.h"
 #define FNV_BASIS 0x811c9dc5
 #define FNV_PRIME 0x01000193
 
@@ -23,7 +26,7 @@ struct VectorHash{
     }
 };
 
-template <typename datatype>
+template <class datatype>
 class ANN{
 private:
 
@@ -33,14 +36,15 @@ private:
     std::unordered_map<std::vector<datatype>, int, VectorHash<datatype>> point_to_node_map;
 
     float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b);
-    void pruneSet(std::set<std::vector<datatype>> myset, int k);
-    std::set<std::vector<datatype>> ANN::neighbourNodes(std::vector<datatype> point);
+    template <typename Compare>
+    void pruneSet(std::set<std::vector<datatype>, Compare>& myset, int k);
+    std::set<std::vector<datatype>> neighbourNodes(std::vector<datatype> point);
 
 public:
     ANN(const std::vector<std::vector<datatype>>& points);
-    
-    std::vector<std::vector<datatype>> greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit);
-    void ANN::robustPrune(std::vector<datatype> point,std::set<std::vector<datatype>> candidate_set,int alpha,int degree_bound/*,graph G*/);
+
+    std::set<std::vector<datatype>> greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit);
+    void robustPrune(std::vector<datatype> point,std::set<std::vector<datatype>> candidate_set,int alpha,int degree_bound/*,graph G*/);
 };
 
 #endif // ann.h
