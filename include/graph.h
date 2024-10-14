@@ -22,7 +22,6 @@ public:
     std::vector<int> getNeighbours(int node);
 
     void removeNeighbours(int node);
-
     int countNeighbours(int node);
 };
 
