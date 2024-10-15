@@ -11,8 +11,8 @@ CC := gcc
 CXX := g++
 
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -std=c++20
-LDFLAGS := -lgtest -lgtest_main -pthread
+CFLAGS := -Wall -Wextra -Werror -g -std=c++20 -I./googletest/googletest/include
+#LDFLAGS := -lgtest -lgtest_main -pthread
 
 # Arguments
 ARGS := 
@@ -24,6 +24,10 @@ OBJ_FILES := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(SRC_FILES))
 TEST_FILES := $(wildcard $(TEST)/*.cpp)
 TEST_OBJ_FILES := $(patsubst $(TEST)/%.cpp, $(BUILD)/test_%.o, $(TEST_FILES))
 TEST_ANN_OBJ_FILES := $(filter-out $(BUILD)/main.o, $(OBJ_FILES))
+
+# Path to local GoogleTest libraries
+LDFLAGS = ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
+
 
 # Default target
 all: $(BIN)/main
