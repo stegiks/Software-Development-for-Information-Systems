@@ -21,15 +21,29 @@ void ANN<datatype>::neighbourNodes(std::vector<datatype> point, std::vector<std:
     // Retrieve the node index for the point
     int node = this->point_to_node_map[point];
     std::vector<int> neighbour_indices = this->G.getNeighbours(node);
-    
+
     // Convert the neighbor indices back to points
     for(int index : neighbour_indices)
         neighbours.push_back(this->node_to_point_map[index]);
 
 }
 
+// Constructor for building a random graph
 template <typename datatype>
 ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points) : G(points.size()){
+    int node_index = 0;
+
+    // Populate the node_to_point_map and point_to_node_map
+    for(const auto& point : points){
+        this->node_to_point_map.push_back(point);
+        this->point_to_node_map[point] = node_index;
+        node_index++;
+    }
+}
+
+// Constructor for building a fixed graph used for testing
+template <typename datatype>
+ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::vector<int>>& edges) : G(edges){
     int node_index = 0;
 
     // Populate the node_to_point_map and point_to_node_map
@@ -43,6 +57,18 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points) : G(points.
 // Greedy search algorithm to find the nearest neighbours
 template <typename datatype>
 std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
+    // Error handling. Maybe Vamana can handle these cases
+    if(this->node_to_point_map.empty()){
+        std::cerr << "Error : Graph is empty" << std::endl;
+        return {};
+    }
+
+    auto iterator = this->point_to_node_map.find(start);
+    if(iterator == this->point_to_node_map.end()){
+        std::cerr << "Error : Start node not found in the graph" << std::endl;
+        return {};
+    }
+    
     // Use CompareVectors class for comparison of points in a set
     CompareVectors<datatype> compare(query);
 
@@ -54,7 +80,7 @@ std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<da
         std::set<std::vector<datatype>, CompareVectors<datatype>> difference(compare);
         
         std::set_difference(nns.begin(), nns.end(), visited.begin(), visited.end(),
-                    std::inserter(difference, difference.end()));
+                    std::inserter(difference, difference.end()), compare);
 
         // If the difference is empty, break out of the loop
         if(difference.empty())
@@ -62,7 +88,7 @@ std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<da
 
         // Get the index of the closest point
         std::vector<datatype> closest_point = *(difference.begin());
-        
+ 
         // Get the neighbors of the closest point
         std::vector<std::vector<datatype>> neighbours;
         this->neighbourNodes(closest_point, neighbours);
@@ -79,6 +105,7 @@ std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<da
             this->pruneSet(nns, upper_limit);
         
     }
+
 
     // Return k closest points to Xq, using regular set
     this->pruneSet(nns, k);
@@ -126,4 +153,5 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
 // Explicit Instantiation of ANN class for datatype int, float and unsigned char
 template class ANN<int>;
 template class ANN<float>;
+template class ANN<long>;
 template class ANN<unsigned char>;

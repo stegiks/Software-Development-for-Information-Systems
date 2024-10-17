@@ -1,6 +1,7 @@
 # Declare path variables
 SRC := ./src
 INCLUDE := ./include
+INCLUDE_GTEST := ./googletest/googletest/include
 BUILD := ./build
 BIN := ./bin
 DATASETS := ./datasets
@@ -11,8 +12,10 @@ CC := gcc
 CXX := g++
 
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -std=c++20 -I./googletest/googletest/include
-#LDFLAGS := -lgtest -lgtest_main -pthread
+CFLAGS := -Wall -Wextra -Werror -g -std=c++17
+
+# Path to local google test libraries
+LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
 
 # Arguments
 ARGS := 
@@ -24,10 +27,6 @@ OBJ_FILES := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(SRC_FILES))
 TEST_FILES := $(wildcard $(TEST)/*.cpp)
 TEST_OBJ_FILES := $(patsubst $(TEST)/%.cpp, $(BUILD)/test_%.o, $(TEST_FILES))
 TEST_ANN_OBJ_FILES := $(filter-out $(BUILD)/main.o, $(OBJ_FILES))
-
-# Path to local GoogleTest libraries
-LDFLAGS = ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
-
 
 # Default target
 all: $(BIN)/main
@@ -42,11 +41,11 @@ $(BIN)/main: $(OBJ_FILES)
 
 # Test Compilation
 $(BUILD)/test_%.o: $(TEST)/%.cpp
-	$(CXX) -c $< -o $@ $(CFLAGS) -I$(INCLUDE)
+	$(CXX) -c $< -o $@ $(CFLAGS) -I$(INCLUDE) -I$(INCLUDE_GTEST)
 
 # Test executable
 $(BIN)/tests: $(TEST_ANN_OBJ_FILES) $(TEST_OBJ_FILES)
-	$(CXX) $^ -o $@ $(CFLAGS) $(LDFLAGS) -I$(INCLUDE)
+	$(CXX) $^ -o $@ $(CFLAGS) $(LDFLAGS) -I$(INCLUDE) -I$(INCLUDE_GTEST)
 
 # Run tests
 test: $(BIN)/tests

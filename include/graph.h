@@ -13,6 +13,7 @@ private:
 
 public:
     Graph(std::size_t n);
+    Graph(std::vector<std::vector<int>> edges);
 
     // Function to add and remove edges
     void addEdge(int a, int b);

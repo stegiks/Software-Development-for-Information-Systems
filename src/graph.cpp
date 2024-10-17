@@ -13,6 +13,8 @@ Graph::Graph(std::size_t n){
     }
 }
 
+Graph::Graph(std::vector<std::vector<int>> edges) : adj_matrix(edges){}
+
 void Graph::addEdge(int a, int b){
     this->adj_matrix[a][b] = 1;
 }
