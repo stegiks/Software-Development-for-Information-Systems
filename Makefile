@@ -28,9 +28,6 @@ TEST_FILES := $(wildcard $(TEST)/*.cpp)
 TEST_OBJ_FILES := $(patsubst $(TEST)/%.cpp, $(BUILD)/test_%.o, $(TEST_FILES))
 TEST_ANN_OBJ_FILES := $(filter-out $(BUILD)/main.o, $(OBJ_FILES))
 
-# Default target
-all: $(BIN)/main
-
 # Compilation
 $(BUILD)/%.o: $(SRC)/%.cpp
 	$(CXX) -c $< -o $@ $(CFLAGS) -I$(INCLUDE)
@@ -62,3 +59,5 @@ clean:
 # Valgrind
 valgrind: $(BIN)/main
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS)
+
+all: clean test

@@ -54,22 +54,48 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
     }
 }
 
-// Greedy search algorithm to find the nearest neighbours
-template <typename datatype>
-std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
-    // Error handling. Maybe Vamana can handle these cases
+template<typename datatype>
+bool ANN<datatype>::checkErrors(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
         std::cerr << "Error : Graph is empty" << std::endl;
-        return {};
+        return true;
+    }
+
+    if(query.size() == 0){
+        std::cerr << "Error : Query point is empty" << std::endl;
+        return true;
     }
 
     auto iterator = this->point_to_node_map.find(start);
+
     if(iterator == this->point_to_node_map.end()){
         std::cerr << "Error : Start node not found in the graph" << std::endl;
-        return {};
+        return true;
     }
     
-    // Use CompareVectors class for comparison of points in a set
+    if(upper_limit < k){
+        std::cerr << "Error : Upper limit cannot be less than k" << std::endl;
+        return true;
+    }
+
+    if(query.size() != start.size()){
+        std::cerr << "Error : Query point and start point have different dimensions" << std::endl;
+        return true;
+    }
+
+    return false;
+}
+
+// Greedy search algorithm to find the nearest neighbours
+template <typename datatype>
+std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
+    
+    // Error handling. Maybe Vamana can handle these cases
+    if(this->checkErrors(start, query, k, upper_limit)){
+        return {};
+    }
+
+    // Comparator object to compare points based on the distance from the query point
     CompareVectors<datatype> compare(query);
 
     std::set<std::vector<datatype>, CompareVectors<datatype>> visited(compare);
@@ -109,10 +135,7 @@ std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<da
 
     // Return k closest points to Xq, using regular set
     this->pruneSet(nns, k);
-    std::set<std::vector<datatype>> nns_copy;
-    for(const auto& vec : nns){
-        nns_copy.insert(vec);
-    }
+    std::set<std::vector<datatype>> nns_copy(nns.begin(), nns.end());
     nns.clear();
     return nns_copy;
 }
