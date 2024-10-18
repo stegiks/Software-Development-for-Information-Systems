@@ -224,9 +224,3 @@ TEST(GreedySearch, FloatDatatype){
     std::set<std::vector<float>> expected = {{4.4, 5.5, 6.6}, {7.7, 8.8, 9.9}};
     EXPECT_EQ(result, expected);
 }
-
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

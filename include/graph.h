@@ -24,6 +24,9 @@ public:
 
     void removeNeighbours(int node);
     int countNeighbours(int node);
+
+    bool checkSimilarity(std::vector<std::vector<int>> edges);
+    void printGraph();
 };
 
 #endif // graph.h

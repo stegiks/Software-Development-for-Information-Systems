@@ -48,3 +48,29 @@ int Graph::countNeighbours(int node){
     }
     return count;
 }
+
+bool Graph::checkSimilarity(std::vector<std::vector<int>> edges){
+    // Check if the adjacency matrix has the same dimensions as the input matrix
+    if(this->adj_matrix.size() != edges.size()){
+        return false;
+    }
+
+
+    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
+        for(std::size_t j = 0; j < this->adj_matrix[i].size(); j++){
+            if(this->adj_matrix[i][j] != edges[i][j]){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void Graph::printGraph(){
+    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
+        for(std::size_t j = 0; j < this->adj_matrix[i].size(); j++){
+            std::cout << this->adj_matrix[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}

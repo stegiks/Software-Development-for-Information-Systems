@@ -55,7 +55,7 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
 }
 
 template<typename datatype>
-bool ANN<datatype>::checkErrors(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
+bool ANN<datatype>::checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
         std::cerr << "Error : Graph is empty" << std::endl;
         return true;
@@ -91,7 +91,7 @@ template <typename datatype>
 std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
     
     // Error handling. Maybe Vamana can handle these cases
-    if(this->checkErrors(start, query, k, upper_limit)){
+    if(this->checkErrorsGreedy(start, query, k, upper_limit)){
         return {};
     }
 
@@ -141,7 +141,7 @@ std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<da
 }
 
 template <typename datatype>
-void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>> candidate_set, int alpha, int degree_bound){
+void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>> candidate_set, float alpha, int degree_bound){
     std::vector<std::vector<datatype>> neighbours;
     this->neighbourNodes(point, neighbours);
 
@@ -159,18 +159,30 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
             break;
         }
         std::vector<datatype> closest_point = *(candidate_set.begin());
+        candidate_set.erase(closest_point);
         this->G.addEdge(this->point_to_node_map[point], this->point_to_node_map[closest_point]);
 
         if(this->G.countNeighbours(this->point_to_node_map[point]) > degree_bound){
             break;
         }
 
+
+        std::set<std::vector<datatype>> temp_set(candidate_set);
         for(const auto& element : candidate_set){
-            if(alpha * calculateDistance(closest_point, element) <= calculateDistance(element, point)){
-                candidate_set.erase(element);
+            std::cout << "Comparing " << alpha * float(calculateDistance(closest_point, element)) << " and " << float(calculateDistance(element, point)) << std::endl;
+            if(alpha * float(calculateDistance(closest_point, element)) <= float(calculateDistance(element, point))){
+                temp_set.erase(element);
             }
         }
+        candidate_set.clear();
+        candidate_set = temp_set;
     }
+}
+
+template <typename datatype>
+bool ANN<datatype>::checkGraph(std::vector<std::vector<int>> edges){
+    this->G.printGraph();
+    return this->G.checkSimilarity(edges);
 }
 
 // Explicit Instantiation of ANN class for datatype int, float and unsigned char

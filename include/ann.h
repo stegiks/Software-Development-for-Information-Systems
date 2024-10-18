@@ -23,14 +23,15 @@ private:
     void pruneSet(std::set<std::vector<datatype>, Compare>& myset, int k);
     void neighbourNodes(std::vector<datatype> point, std::vector<std::vector<datatype>>& neighbours);
 
-    bool checkErrors(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit);
+    bool checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit);
 
 public:
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::vector<int>>& edges);
 
     std::set<std::vector<datatype>> greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit);
-    void robustPrune(std::vector<datatype> point,std::set<std::vector<datatype>> candidate_set,int alpha,int degree_bound);
+    void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>> candidate_set, float alpha, int degree_bound);
+    bool checkGraph(std::vector<std::vector<int>> edges);
 };
 
 #endif // ann.h
