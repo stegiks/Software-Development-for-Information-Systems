@@ -6,3 +6,4 @@ cd build
 cmake ..
 make
 cd ../..
+mkdir build bin
