@@ -141,17 +141,56 @@ std::set<std::vector<datatype>> ANN<datatype>::greedySearch(const std::vector<da
 }
 
 template <typename datatype>
-void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>> candidate_set, float alpha, int degree_bound){
+template <typename Compare>
+void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, float alpha, int degree_bound){
     std::vector<std::vector<datatype>> neighbours;
     this->neighbourNodes(point, neighbours);
+
+    // ! Debugging
+    std::cout << "Point : ";
+    for(const auto& element : point){
+        std::cout << element << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Neighbours of point :" << std::endl;
+    for(const auto& neighbour : neighbours){
+        for(const auto& element : neighbour){
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    // ! End Debugging
 
     for(const auto& neighbour : neighbours){
         candidate_set.insert(neighbour);
     }
 
+    // ! Debugging
+    std::cout << "Candidate set :" << std::endl;
+    for(const auto& element : candidate_set){
+        for(const auto& point : element){
+            std::cout << point << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Current Graph :" << std::endl;
+    this->G.printGraph();
+    std::cout << std::endl;
+    // ! End Debugging
+
     // Remove point p from candidate_set and prune all its neighbours
     candidate_set.erase(point);
     this->G.removeNeighbours(this->point_to_node_map[point]);
+
+    // ! Debugging
+    std::cout << "Graph after removing neighbours of point :" << std::endl;
+    this->G.printGraph();
+    std::cout << std::endl;
+    // ! End Debugging
 
     while(true){
 
@@ -159,23 +198,59 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
             break;
         }
         std::vector<datatype> closest_point = *(candidate_set.begin());
+
+        // ! Debugging
+        std::cout << "Closest point from candidate set: ";
+        for(const auto& element : closest_point){
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;
+        // ! End Debugging
+
+        // Closest point would have been removed from candidate set in alpha comparison step anyway
         candidate_set.erase(closest_point);
         this->G.addEdge(this->point_to_node_map[point], this->point_to_node_map[closest_point]);
+
+        // ! Debugging
+        std::cout << "Graph after adding edge between point and closest point :" << std::endl;
+        this->G.printGraph();
+        std::cout << std::endl;
+        // ! End Debugging
 
         if(this->G.countNeighbours(this->point_to_node_map[point]) > degree_bound){
             break;
         }
 
+        for(auto it = candidate_set.begin(); it != candidate_set.end();){
+            const auto& element = *it;
 
-        std::set<std::vector<datatype>> temp_set(candidate_set);
-        for(const auto& element : candidate_set){
-            std::cout << "Comparing " << alpha * float(calculateDistance(closest_point, element)) << " and " << float(calculateDistance(element, point)) << std::endl;
-            if(alpha * float(calculateDistance(closest_point, element)) <= float(calculateDistance(element, point))){
-                temp_set.erase(element);
+            // ! Debugging
+            std::cout << "Element : ";
+            for (const auto& point : element) {
+                std::cout << point << " ";
             }
+            std::cout << std::endl;
+            std::cout << "Comparing " << alpha * float(calculateDistance(closest_point, element))
+                    << " and " << float(calculateDistance(element, point)) << std::endl;
+            std::cout << std::endl;
+            // ! End Debugging
+
+            if(alpha * float(calculateDistance(closest_point, element)) <= float(calculateDistance(element, point)))
+                it = candidate_set.erase(it);
+            else
+                it++;  // Only advance iterator if no deletion
         }
-        candidate_set.clear();
-        candidate_set = temp_set;
+
+        // ! Debugging
+        std::cout << "Candidate set after pruning :" << std::endl;
+        for(const auto& element : candidate_set){
+            for(const auto& point : element){
+                std::cout << point << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+        // ! End debugging
     }
 }
 
@@ -185,8 +260,34 @@ bool ANN<datatype>::checkGraph(std::vector<std::vector<int>> edges){
     return this->G.checkSimilarity(edges);
 }
 
-// Explicit Instantiation of ANN class for datatype int, float and unsigned char
+// Explicit instantiation of ANN class for datatype int, float and unsigned char
 template class ANN<int>;
 template class ANN<float>;
 template class ANN<long>;
 template class ANN<unsigned char>;
+
+// Explicit instantiation for robustPrune with the different datatypes
+template void ANN<int>::robustPrune<CompareVectors<int>>(
+    std::vector<int>, 
+    std::set<std::vector<int>, CompareVectors<int>>&, 
+    float, 
+    int
+);
+template void ANN<float>::robustPrune<CompareVectors<float>>(
+    std::vector<float>, 
+    std::set<std::vector<float>, CompareVectors<float>>&, 
+    float, 
+    int
+);
+template void ANN<unsigned char>::robustPrune<CompareVectors<unsigned char>>(
+    std::vector<unsigned char>, 
+    std::set<std::vector<unsigned char>, CompareVectors<unsigned char>>&, 
+    float, 
+    int
+);
+template void ANN<long>::robustPrune<CompareVectors<long>>(
+    std::vector<long>, 
+    std::set<std::vector<long>, CompareVectors<long>>&, 
+    float, 
+    int
+);

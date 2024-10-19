@@ -17,7 +17,13 @@ TEST(RobustPrune, BasicFunctionality) {
     };
 
     std::vector<int> start = {2, 3};
-    std::set<std::vector<int>> candidate = {{1, 0}, {1, 2}, {1, -5}};
+
+    CompareVectors<int> compare(start);
+    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
+    candidate.insert({1, 2});
+    candidate.insert({1, 0});
+    candidate.insert({1, -5});
+
     std::vector<std::vector<int>> expected = {
         {0, 0, 1, 0, 0, 0},
         {1, 0, 0, 1, 0, 0},
@@ -29,7 +35,6 @@ TEST(RobustPrune, BasicFunctionality) {
     ANN<int> ann(points, edges);
 
     ann.robustPrune(start, candidate, 1.1, 5);
-
 
     EXPECT_TRUE(ann.checkGraph(expected));
 }
