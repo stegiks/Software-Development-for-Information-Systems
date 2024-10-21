@@ -1,0 +1,40 @@
+name: C++ Test Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Make sure setup.sh is executable
+    - name: Make setup.sh executable
+      run: chmod +x ./setup.sh
+
+    # Run the setup.sh script to install dependencies and set up the project
+    - name: Run setup.sh
+      run: ./setup.sh
+
+    # Build and run tests
+    - name: Build and run tests
+      run: |
+        cd build
+        make
+        ./your_test_executable  # Replace with the name of your test executable file
+
+    # Fail the build if any tests fail
+    - name: Ensure tests passed
+      if: failure()
+      run: exit 1
