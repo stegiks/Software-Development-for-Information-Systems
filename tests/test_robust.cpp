@@ -148,7 +148,7 @@ TEST_F(RobustPruneTest, DegreeBoundOne){
         {1, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0},
         {0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0}
+        
     }; 
 
     ann->robustPrune(start, candidate, 1.1, 1);
