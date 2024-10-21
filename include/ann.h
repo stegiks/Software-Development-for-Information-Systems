@@ -14,8 +14,7 @@
 template <class datatype>
 class ANN{
 private:
-
-    Graph G;
+    Graph* G;
     std::vector<std::vector<datatype>> node_to_point_map;
     std::unordered_map<std::vector<datatype>, int, VectorHash<datatype>> point_to_node_map;
 

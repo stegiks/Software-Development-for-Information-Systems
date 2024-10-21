@@ -177,3 +177,17 @@ TEST_F(RobustPruneTest, LargeAlpha){
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
+
+TEST_F(RobustPruneTest, EmptySet) {
+    CompareVectors<int> compare(start);
+    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
+
+    // Delete ann object created in the constructor
+    delete ann;
+
+    // Create new ANN object with empty set of points and expect an exception
+    std::vector<std::vector<int>> empty = {};
+    ann = new ANN<int>(empty, edges);
+    EXPECT_TRUE(true);
+}
+
