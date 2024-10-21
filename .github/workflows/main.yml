@@ -29,10 +29,7 @@ jobs:
 
     # Build and run tests
     - name: Build and run tests
-      run: |
-        cd build
-        make
-        ./your_test_executable  # Replace with the name of your test executable file
+      run: make all
 
     # Fail the build if any tests fail
     - name: Ensure tests passed
