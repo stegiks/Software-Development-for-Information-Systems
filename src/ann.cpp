@@ -63,6 +63,17 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
     
 }
 
+template <typename datatype>
+ANN<datatype>::ANN(void){
+    int node_index = 0;
+
+    for (const auto& point : points) {
+        this->node_to_point_map.push_back(point);
+        this->point_to_node_map[point] = node_index;
+        node_index++;
+    }
+}
+
 template<typename datatype>
 bool ANN<datatype>::checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
@@ -227,6 +238,50 @@ template <typename datatype>
 bool ANN<datatype>::checkGraph(std::vector<std::vector<int>> edges){
     this->G->printGraph();
     return this->G->checkSimilarity(edges);
+}
+
+template <typename datatype>
+void ANN<datatype>::Vamana(int alpha,int L,int R){
+    // #TODO Search what R-regular graph is
+    this->G = new Graph(this->node_to_point_map.size());
+
+
+    //Get medoid of dataset 
+    std::vector<datatype> medoid = this->node_to_point_map[0];
+
+    //Get a random permutation of 1 to n
+    std::vector<int> perm;
+    for(int i=0;i<this->node_to_point_map.size();i++){
+        perm.push_back(i);
+    }
+    std::random_shuffle(perm.begin(),perm.end());
+
+    for(int i=0;i<this->node_to_point_map.size();i++){
+        int p = perm[i];
+        L = this->greedySearch(medoid,this->node_to_point_map[p],1,L);
+        
+        // Asume greedySearch also returns Visited
+        // #TODO This is a placeholder
+        std::set<std::vector<datatype>> Visited = {};
+        
+        
+        this->robustPrune(this->node_to_point_map[p],Visited,alpha,R);
+
+
+        std::set<std::vector<datatype>>  neighbours;
+        this->neighbourNodes(this->node_to_point_map[p],neighbours);
+        for(auto neighbour:neighbours){
+            if((this->G->countNeighbours(this->point_to_node_map[neighbour])+1) > R){
+                std::set<std::vector<datatype>> temp = neighbours;
+                temp.insert(this->node_to_point_map[p]);
+                this->robustPrune(neighbour,,alpha,R);
+            }
+            else{
+                this->G->addEdge(this->point_to_node_map[neighbour],this->point_to_node_map[p]);
+            }
+        }
+
+    }
 }
 
 // Explicit instantiation of ANN class for datatype int, float and unsigned char
