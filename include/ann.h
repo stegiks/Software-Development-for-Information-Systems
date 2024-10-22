@@ -24,6 +24,7 @@ private:
 
     bool checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit);
     bool checkErrorsRobust(std::vector<datatype> point, const float alpha, const int degree_bound);
+    std::vector<datatype> getMedoid();
 
 public:
     ANN(const std::vector<std::vector<datatype>>& points);

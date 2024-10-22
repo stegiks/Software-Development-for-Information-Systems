@@ -240,15 +240,36 @@ bool ANN<datatype>::checkGraph(std::vector<std::vector<int>> edges){
     return this->G->checkSimilarity(edges);
 }
 
+
+template <typename datatype>
+std::vector<datatype> ANN<datatype> :: getMedoid(){
+    std::vector<datatype> medoid;
+
+    // Get the point with the minimum sum of distances
+    float min_sum = std::numeric_limits<float>::max();
+
+    for(int i=0;i<this->node_to_point_map.size();i++){
+        float sum = 0;
+        for(int j=0;j<this->node_to_point_map.size();j++){
+            sum += calculateDistance(this->node_to_point_map[i],this->node_to_point_map[j]);
+        }
+        if(sum < min_sum){
+            min_sum = sum;
+            medoid = this->node_to_point_map[i];
+        }
+    }
+
+    return medoid;
+    
+}
 template <typename datatype>
 void ANN<datatype>::Vamana(int alpha,int L,int R){
-    // #TODO Search what R-regular graph is
-    this->G = new Graph(this->node_to_point_map.size());
+   
+    this->G = new Graph(this->node_to_point_map.size(), R);
 
 
-    //Get medoid of dataset 
-    std::vector<datatype> medoid = this->node_to_point_map[0];
-
+    //Get medoid of dataset
+    std::vector<datatype> medoid = this->getMedoid();
     //Get a random permutation of 1 to n
     std::vector<int> perm;
     for(int i=0;i<this->node_to_point_map.size();i++){

@@ -5,8 +5,8 @@ Graph::Graph(std::size_t n){
     srand(time(NULL));
     this->adj_matrix = std::vector<std::vector<int>>(n, std::vector<int>(n, 0));
     for(std::size_t i = 0; i < n; i++){
-        for(std::size_t j = i+1; j < n; j++){
-            if(rand() % 2 == 1){
+        for(std::size_t j = 1; j < n; j++){
+            if((rand() % 2 == 1) && i != j){
                 addEdge(i, j);
             }
         }
@@ -18,11 +18,13 @@ Graph::Graph(std::size_t n,int p){
     srand(time(NULL));
     this->adj_matrix = std::vector<std::vector<int>>(n, std::vector<int>(n, 0));
     for(std::size_t i = 0; i < n; i++){
-        for(std::size_t j = i+1; j < n; j++){
-            //R-regular graph
-            if(rand() % 2 == 1){
-                addEdge(i, j);
-            }
+        // Get p random neighbours
+        for(int j = 0; j < p; j++){
+            int neighbour;
+            do{
+                neighbour = rand() % n;
+            }while(neighbour == i || this->adj_matrix[i][neighbour] == 1);
+            addEdge(i, neighbour);
         }
     }
 }
