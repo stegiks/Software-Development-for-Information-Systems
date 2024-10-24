@@ -8,7 +8,7 @@ class RobustPruneTest : public testing::Test{
 protected:
 
     std::vector<std::vector<int>> points;
-    std::vector<std::vector<int>> edges;
+    std::vector<std::unordered_set<int>> edges;
     std::vector<int> start;
     ANN<int>* ann;
 
@@ -16,12 +16,12 @@ protected:
         // Initialize the graph
         points = {{1, 2}, {1, 0}, {2, 3}, {1, -5}, {3, -5}, {6, 2}};
         edges = {
-            {0, 0, 1, 0, 0, 0},
-            {1, 0, 0, 1, 0, 0},
-            {0, 1, 0, 0, 0, 1},
-            {0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 1, 0, 0},
-            {0, 0, 0, 0, 1, 0}
+            {2},
+            {0, 3},
+            {1, 5},
+            {},
+            {3},
+            {4}
         };
 
         start = {2, 3};
@@ -43,13 +43,13 @@ TEST_F(RobustPruneTest, BasicFunctionality){
     candidate.insert({1, 0});
     candidate.insert({1, -5});
 
-    std::vector<std::vector<int>> expected = {
-        {0, 0, 1, 0, 0, 0},
-        {1, 0, 0, 1, 0, 0},
-        {1, 0, 0, 0, 0, 1},
-        {0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0}
+    std::vector<std::unordered_set<int>> expected = {
+        {2},
+        {0, 3},
+        {0, 5},
+        {},
+        {3},
+        {4}
     };
 
     ann->robustPrune(start, candidate, 1.1, 5);
@@ -72,7 +72,7 @@ TEST_F(RobustPruneTest, EmptyCandidateSet){
 TEST_F(RobustPruneTest, InvalidGraphPoint){
     // Empty graph
     std::vector<std::vector<int>> points_alt = {};
-    std::vector<std::vector<int>> edges_alt = {};
+    std::vector<std::unordered_set<int>> edges_alt = {};
     std::vector<int> start_alt = {2, 3};
 
     CompareVectors<int> compare(start_alt);
@@ -89,12 +89,12 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
     // Point not in graph
     points_alt = {{1, 2}, {1, 0}, {2, 3}, {1, -5}, {3, -5}, {6, 2}};
     edges_alt = {
-        {0, 0, 1, 0, 0, 0},
-        {1, 0, 0, 1, 0, 0},
-        {0, 1, 0, 0, 0, 1},
-        {0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0}
+        {2},
+        {0, 3},
+        {1, 5},
+        {},
+        {3},
+        {4}
     };
 
     ANN<int> ann_alt2(points_alt, edges_alt);
@@ -142,14 +142,14 @@ TEST_F(RobustPruneTest, DegreeBoundOne){
     candidate.insert({3, -5});
     candidate.insert({6, 2});
 
-    std::vector<std::vector<int>> expected = {
-        {0, 0, 1, 0, 0, 0},
-        {1, 0, 0, 1, 0, 0},
-        {1, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0}
-    }; 
+    std::vector<std::unordered_set<int>> expected = {
+        {2},
+        {0, 3},
+        {0},
+        {},
+        {3},
+        {4}
+    };
 
     ann->robustPrune(start, candidate, 1.1, 1);
 
@@ -164,13 +164,13 @@ TEST_F(RobustPruneTest, LargeAlpha){
     candidate.insert({1, 0});
     candidate.insert({1, -5});
 
-    std::vector<std::vector<int>> expected = {
-        {0, 0, 1, 0, 0, 0},
-        {1, 0, 0, 1, 0, 0},
-        {1, 1, 0, 1, 0, 1},
-        {0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0}
+    std::vector<std::unordered_set<int>> expected = {
+        {2},
+        {0, 3},
+        {0, 1, 3, 5},
+        {},
+        {3},
+        {4}
     };
 
     ann->robustPrune(start, candidate, 1000, 5);

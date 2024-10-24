@@ -3,70 +3,63 @@
 Graph::Graph(std::size_t n){
     // Randomly generate a graph with n nodes
     srand(time(NULL));
-    this->adj_matrix = std::vector<std::vector<int>>(n, std::vector<int>(n, 0));
+    this->adj_list = std::vector<std::unordered_set<int>>(n);
     for(std::size_t i = 0; i < n; i++){
-        for(std::size_t j = i+1; j < n; j++){
+        for(std::size_t j = 0; j < n; j++){
             if(rand() % 2 == 1){
-                addEdge(i, j);
+                this->addEdge(i, j);
             }
         }
     }
 }
 
-Graph::Graph(std::vector<std::vector<int>> edges) : adj_matrix(edges){}
+Graph::Graph(std::vector<std::unordered_set<int>> edges){
+    this->adj_list = edges;
+}
 
 void Graph::addEdge(int a, int b){
-    this->adj_matrix[a][b] = 1;
+    this->adj_list[a].insert(b);
 }
 
 void Graph::removeEdge(int a, int b){
-    this->adj_matrix[a][b] = 0;
+    this->adj_list[a].erase(b);
 }
 
 std::vector<int> Graph::getNeighbours(int node){
     std::vector<int> neighbours;
-    for(std::size_t i = 0; i < this->adj_matrix[node].size(); i++){
-        if(this->adj_matrix[node][i] == 1){
-            neighbours.push_back(i);
-        }
+    for(auto neighbour : this->adj_list[node]){
+        neighbours.push_back(neighbour);
     }
     return neighbours;
+    // ! OR RETURN std::unordered_set with the function signature
+    // return this->adj_list[node];
 }
 
 void Graph::removeNeighbours(int node){
-    for(std::size_t i = 0; i < this->adj_matrix[node].size(); i++){
-        this->adj_matrix[node][i] = 0;
-    }
+    this->adj_list[node].clear();
 }
 
 int Graph::countNeighbours(int node){
-    int count = 0;
-    for(std::size_t i = 0; i < this->adj_matrix[node].size(); i++){
-        if(this->adj_matrix[node][i] == 1){
-            count++;
-        }
-    }
-    return count;
+    return this->adj_list[node].size();
 }
 
-bool Graph::checkSimilarity(std::vector<std::vector<int>> edges){
-    // Check if the adjacency matrix has the same dimensions as the input matrix
-    if(this->adj_matrix.size() != edges.size())
+bool Graph::checkSimilarity(std::vector<std::unordered_set<int>> edges){
+    // Check if the adjacency list has the same dimensions as the input matrix
+    if(this->adj_list.size() != edges.size())
         return false;
 
-
-    for(std::size_t i = 0; i < this->adj_matrix.size(); i++)
-        for(std::size_t j = 0; j < this->adj_matrix[i].size(); j++)
-            if(this->adj_matrix[i][j] != edges[i][j])
-                return false;
+    for(std::size_t i = 0; i < this->adj_list.size(); i++)
+        if(this->adj_list[i] != edges[i])
+            return false;
 
     return true;
 }
 
 void Graph::printGraph(){
-    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
-        for(std::size_t j = 0; j < this->adj_matrix[i].size(); j++){
-            std::cout << this->adj_matrix[i][j] << " ";
+    for(std::size_t i = 0; i < this->adj_list.size(); i++){
+        std::cout << "Node " << i << " : ";
+        for(auto neighbour : this->adj_list[i]){
+            std::cout << neighbour << " ";
         }
         std::cout << std::endl;
     }

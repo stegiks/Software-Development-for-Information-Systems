@@ -4,13 +4,13 @@
 // Basic tests for the greedy search algorithm
 TEST(GreedySearch, BasicTests){
     std::vector<std::vector<int>> points = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15}, {16, 17, 18}};
-    std::vector<std::vector<int>> edges = {
-        {0, 1, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0},
-        {1, 1, 0, 1, 0, 0},
-        {0, 0, 1, 0, 1, 0},
-        {0, 1, 0, 0, 0, 1},
-        {0, 0, 0, 1, 1, 0}
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 5},
+        {0, 2},
+        {0, 1, 3},
+        {2, 4},
+        {1, 5},
+        {3, 4}
     };
 
     // Fixed graph initialization
@@ -26,12 +26,12 @@ TEST(GreedySearch, BasicTests){
 
     // Diffrent graph may result in different nearest neighbours
     edges = {
-        {0, 0, 0, 1, 1, 0},
-        {1, 0, 0, 1, 0, 1},
-        {0, 1, 0, 1, 0, 0},
-        {1, 0, 0, 0, 1, 1},
-        {1, 0, 0, 1, 0, 1},
-        {0, 1, 1, 1, 0, 0}
+        {3, 4},
+        {0, 3, 5},
+        {1, 3},
+        {0, 4, 5},
+        {0, 3, 5},
+        {1, 2, 3}
     };
 
     ANN<int> ann2(points, edges);
@@ -43,13 +43,13 @@ TEST(GreedySearch, BasicTests){
 // Test for empty query node
 TEST(GreedySearch, EmptyQuery){
     std::vector<std::vector<int>> points = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15}, {16, 17, 18}};
-    std::vector<std::vector<int>> edges = {
-        {0, 1, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0},
-        {1, 1, 0, 1, 0, 0},
-        {0, 0, 1, 0, 1, 0},
-        {0, 1, 0, 0, 0, 1},
-        {0, 0, 0, 1, 1, 0}
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 5},
+        {0, 2},
+        {0, 1, 3},
+        {2, 4},
+        {1, 5},
+        {3, 4}
     };
 
     // Fixed graph initialization
@@ -66,13 +66,13 @@ TEST(GreedySearch, EmptyQuery){
 // Test Dimension mismatch
 TEST(GreedySearch, DimensionMismatch){
     std::vector<std::vector<int>> points = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15}, {16, 17, 18}};
-    std::vector<std::vector<int>> edges = {
-        {0, 1, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0},
-        {1, 1, 0, 1, 0, 0},
-        {0, 0, 1, 0, 1, 0},
-        {0, 1, 0, 0, 0, 1},
-        {0, 0, 0, 1, 1, 0}
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 5},
+        {0, 2},
+        {0, 1, 3},
+        {2, 4},
+        {1, 5},
+        {3, 4}
     };
 
     // Fixed graph initialization
@@ -90,13 +90,13 @@ TEST(GreedySearch, DimensionMismatch){
 //Test for query point being a base vector
 TEST(GreedySearch, BaseVector){
     std::vector<std::vector<int>> points = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15}, {16, 17, 18}};
-    std::vector<std::vector<int>> edges = {
-        {0, 1, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0},
-        {1, 1, 0, 1, 0, 0},
-        {0, 0, 1, 0, 1, 0},
-        {0, 1, 0, 0, 0, 1},
-        {0, 0, 0, 1, 1, 0}
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 5},
+        {0, 2},
+        {0, 1, 3},
+        {2, 4},
+        {1, 5},
+        {3, 4}
     };
 
     ANN<int> ann(points, edges);
@@ -120,7 +120,8 @@ TEST(GreedySearch, BaseVector){
 // Test one point graph
 TEST(GreedySearch, OnePoint){
     std::vector<std::vector<int>> points = {{1, 2, 3}};
-    std::vector<std::vector<int>> edges = {{0}};
+    // ! Maybe {{0}} is better
+    std::vector<std::unordered_set<int>> edges = {{}};
 
     ANN<int> ann(points, edges);
     std::vector<int> start_node = {1, 2, 3};
@@ -136,7 +137,7 @@ TEST(GreedySearch, OnePoint){
 // Test for empty graph
 TEST(GreedySearch, EmptyGraph){
     std::vector<std::vector<int>> points = {};
-    std::vector<std::vector<int>> edges = {};
+    std::vector<std::unordered_set<int>> edges = {};
 
     ANN<int> ann(points, edges);
     std::vector<int> start_node = {1, 2, 3};
@@ -151,7 +152,7 @@ TEST(GreedySearch, EmptyGraph){
 // Different k values
 TEST(GreedySearch, KDifferentValues){
     std::vector<std::vector<int>> points = {{1, 2, 3}, {4, 5, 6}};
-    std::vector<std::vector<int>> edges = {{0, 1}, {1, 0}};
+    std::vector<std::unordered_set<int>> edges = {{1}, {0}};
 
     ANN<int> ann(points, edges);
     std::vector<int> start_node = {1, 2, 3};
@@ -182,13 +183,13 @@ TEST(GreedySearch, KDifferentValues){
 // Test for unsigned char datatype
 TEST(GreedySearch, UnsignedCharDatatype){
     std::vector<std::vector<unsigned char>> points = {{'a', 'd', 'k'}, {'b', 'l', 'm'}, {'c', 'n', 'o'}, {'t', 't', 't'}, {'x', 'y', 'z'}, {'a', 'b', 'c'}};
-    std::vector<std::vector<int>> edges = {
-        {0, 1, 0, 0, 1, 0},
-        {1, 0, 0, 1, 0, 1},
-        {0, 1, 0, 1, 0, 0},
-        {0, 0, 1, 0, 1, 1},
-        {1, 0, 0, 1, 0, 1},
-        {0, 1, 0, 0, 1, 0}
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 4},
+        {0, 3, 5},
+        {1, 3},
+        {2, 4, 5},
+        {0, 3, 5},
+        {1, 4}
     };
 
     ANN<unsigned char> ann(points, edges);
@@ -205,13 +206,13 @@ TEST(GreedySearch, UnsignedCharDatatype){
 // Test for float datatype
 TEST(GreedySearch, FloatDatatype){
     std::vector<std::vector<float>> points = {{1.1, 2.2, 3.3}, {4.4, 5.5, 6.6}, {7.7, 8.8, 9.9}, {10.1, 11.1, 12.1}, {13.1, 14.1, 15.1}, {16.1, 17.1, 18.1}};
-    std::vector<std::vector<int>> edges = {
-        {0, 1, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0},
-        {1, 1, 0, 1, 0, 0},
-        {0, 0, 1, 0, 1, 0},
-        {0, 1, 0, 0, 0, 1},
-        {0, 0, 0, 1, 1, 0}
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 5},
+        {0, 2},
+        {0, 1, 3},
+        {2, 4},
+        {1, 5},
+        {3, 4}
     };
 
     ANN<float> ann(points, edges);

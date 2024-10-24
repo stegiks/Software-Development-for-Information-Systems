@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <cmath>
 #include <algorithm>
 #include <iterator> 
@@ -27,12 +28,12 @@ private:
 
 public:
     ANN(const std::vector<std::vector<datatype>>& points);
-    ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::vector<int>>& edges);
+    ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
 
     std::set<std::vector<datatype>> greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit);
     template <typename Compare>
     void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound);
-    bool checkGraph(std::vector<std::vector<int>> edges);
+    bool checkGraph(std::vector<std::unordered_set<int>> edges);
 };
 
 #endif // ann.h
