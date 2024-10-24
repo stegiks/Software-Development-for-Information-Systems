@@ -1,9 +1,12 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <vector>
 #include <iostream>
-#include <ctime>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <iterator> 
+#include <random>
 
 // Class to represent a graph
 class Graph{

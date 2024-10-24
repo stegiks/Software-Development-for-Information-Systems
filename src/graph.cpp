@@ -1,5 +1,5 @@
 #include "graph.h"
-
+#include <random>
 Graph::Graph(std::size_t n){
     // Randomly generate a graph with n nodes
     srand(time(NULL));
@@ -69,5 +69,17 @@ void Graph::printGraph(){
             std::cout << this->adj_matrix[i][j] << " ";
         }
         std::cout << std::endl;
+    }
+}
+
+void Graph::enforceRegular(int R){
+    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
+        std::vector<int> neighbours = getNeighbours(i);
+        if(neighbours.size() >size_t(R)){
+            std::shuffle(neighbours.begin(), neighbours.end(),std::default_random_engine(0));
+            for(std::size_t j = R; j < neighbours.size(); j++){
+                removeEdge(i, neighbours[j]);
+            }
+        }
     }
 }

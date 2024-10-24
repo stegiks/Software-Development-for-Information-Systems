@@ -63,17 +63,6 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
     
 }
 
-template <typename datatype>
-ANN<datatype>::ANN(void){
-    int node_index = 0;
-
-    for (const auto& point : points) {
-        this->node_to_point_map.push_back(point);
-        this->point_to_node_map[point] = node_index;
-        node_index++;
-    }
-}
-
 template<typename datatype>
 bool ANN<datatype>::checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
@@ -248,10 +237,10 @@ std::vector<datatype> ANN<datatype> :: getMedoid(){
     // Get the point with the minimum sum of distances
     float min_sum = std::numeric_limits<float>::max();
 
-    for(int i=0;i<this->node_to_point_map.size();i++){
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
         
         float sum = 0;
-        for(int j=0;j<this->node_to_point_map.size();j++){
+        for(size_t j=0;j<this->node_to_point_map.size();j++){
             sum += calculateDistance(this->node_to_point_map[i],this->node_to_point_map[j]);
         }
 
@@ -265,7 +254,7 @@ std::vector<datatype> ANN<datatype> :: getMedoid(){
     
 }
 template <typename datatype>
-void ANN<datatype>::Vamana(int alpha,int L,int R){
+void ANN<datatype>::Vamana(float alpha,int L,int R){
    
     this->G->enforceRegular(R);
 
@@ -275,34 +264,42 @@ void ANN<datatype>::Vamana(int alpha,int L,int R){
     //Get a random permutation of 1 to n
     std::vector<int> perm;
 
-    for(int i=0;i<this->node_to_point_map.size();i++){
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
         perm.push_back(i);
     }
-    std::random_shuffle(perm.begin(),perm.end());
 
-    for(int i=0;i<this->node_to_point_map.size();i++){
+    unsigned seed = 0;
+
+    std::shuffle(perm.begin(),perm.end(),std::default_random_engine(seed));
+
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
         int p = perm[i];
         
-        L = this->greedySearch(medoid,this->node_to_point_map[p],1,L);
+        std::set<std::vector<datatype>> L_set;
+        L_set = this->greedySearch(medoid,this->node_to_point_map[p],1,L);
         
         // Asume greedySearch also returns Visited
         // #TODO This is a placeholder
-        std::set<std::vector<datatype>> Visited = {};
+        std::vector<datatype> point = this->node_to_point_map[p];
+        CompareVectors<datatype> compare(point);
+        std::set<std::vector<datatype>, CompareVectors<datatype>> Visited(compare);        
         
-        
-        this->robustPrune(this->node_to_point_map[p],Visited,alpha,R);
+        this->robustPrune(point,Visited,alpha,R);
 
 
-        std::set<std::vector<datatype>>  neighbours;
+        std::vector<std::vector<datatype>> neighbours;
         this->neighbourNodes(this->node_to_point_map[p],neighbours);
         for(auto neighbour:neighbours){
             if((this->G->countNeighbours(this->point_to_node_map[neighbour])+1) > R){
-                std::set<std::vector<datatype>> temp = neighbours;
-                temp.insert(this->node_to_point_map[p]);
-                this->robustPrune(neighbour,,alpha,R);
+                std::vector<datatype> point = this->node_to_point_map[p];
+                CompareVectors<datatype> compare(point);
+                std::set<std::vector<datatype>, CompareVectors<datatype>> temp(compare);
+                temp.insert(point);
+
+                this->robustPrune(neighbour,temp,alpha,R);
             }
             else{
-                this->G->addEdge(this->point_to_node_map[neighbour],this->point_to_node_map[p]);
+                this->G->addEdge(this->point_to_node_map[neighbour],p);
             }
         }
 
