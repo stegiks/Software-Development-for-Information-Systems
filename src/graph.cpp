@@ -13,22 +13,6 @@ Graph::Graph(std::size_t n){
     }
 }
 
-Graph::Graph(std::size_t n,int p){
-    // Randomly generate a graph with n nodes
-    srand(time(NULL));
-    this->adj_matrix = std::vector<std::vector<int>>(n, std::vector<int>(n, 0));
-    for(std::size_t i = 0; i < n; i++){
-        // Get p random neighbours
-        for(int j = 0; j < p; j++){
-            int neighbour;
-            do{
-                neighbour = rand() % n;
-            }while(neighbour == i || this->adj_matrix[i][neighbour] == 1);
-            addEdge(i, neighbour);
-        }
-    }
-}
-
 Graph::Graph(std::vector<std::vector<int>> edges) : adj_matrix(edges){}
 
 void Graph::addEdge(int a, int b){

@@ -14,7 +14,6 @@ private:
 public:
     Graph(std::size_t n);
     Graph(std::vector<std::vector<int>> edges);
-    Graph(std::size_t n,int p);
 
     // Function to add and remove edges
     void addEdge(int a, int b);
@@ -28,6 +27,8 @@ public:
 
     bool checkSimilarity(std::vector<std::vector<int>> edges);
     void printGraph();
+
+    void enforceRegular(int R);
 };
 
 #endif // graph.h

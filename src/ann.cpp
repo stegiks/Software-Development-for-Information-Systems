@@ -249,10 +249,12 @@ std::vector<datatype> ANN<datatype> :: getMedoid(){
     float min_sum = std::numeric_limits<float>::max();
 
     for(int i=0;i<this->node_to_point_map.size();i++){
+        
         float sum = 0;
         for(int j=0;j<this->node_to_point_map.size();j++){
             sum += calculateDistance(this->node_to_point_map[i],this->node_to_point_map[j]);
         }
+
         if(sum < min_sum){
             min_sum = sum;
             medoid = this->node_to_point_map[i];
@@ -265,13 +267,14 @@ std::vector<datatype> ANN<datatype> :: getMedoid(){
 template <typename datatype>
 void ANN<datatype>::Vamana(int alpha,int L,int R){
    
-    this->G = new Graph(this->node_to_point_map.size(), R);
-
+    this->G->enforceRegular(R);
 
     //Get medoid of dataset
     std::vector<datatype> medoid = this->getMedoid();
+
     //Get a random permutation of 1 to n
     std::vector<int> perm;
+
     for(int i=0;i<this->node_to_point_map.size();i++){
         perm.push_back(i);
     }
@@ -279,6 +282,7 @@ void ANN<datatype>::Vamana(int alpha,int L,int R){
 
     for(int i=0;i<this->node_to_point_map.size();i++){
         int p = perm[i];
+        
         L = this->greedySearch(medoid,this->node_to_point_map[p],1,L);
         
         // Asume greedySearch also returns Visited
@@ -336,3 +340,23 @@ template void ANN<long>::robustPrune<CompareVectors<long>>(
     float, 
     int
 );
+
+
+
+
+
+
+/*
+Graph Vamana(void){
+    Graph * R_Regular_Graph = new graph(...);
+    ANN * ann = new ANN(R_Regular_Graph);
+
+    copy ann->G;
+    delete ann;
+    return copy;
+
+}
+
+
+
+*/
