@@ -229,6 +229,83 @@ bool ANN<datatype>::checkGraph(std::vector<std::vector<int>> edges){
     return this->G->checkSimilarity(edges);
 }
 
+
+template <typename datatype>
+std::vector<datatype> ANN<datatype> :: getMedoid(){
+    std::vector<datatype> medoid;
+
+    // Get the point with the minimum sum of distances
+    float min_sum = std::numeric_limits<float>::max();
+
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
+        
+        float sum = 0;
+        for(size_t j=0;j<this->node_to_point_map.size();j++){
+            sum += calculateDistance(this->node_to_point_map[i],this->node_to_point_map[j]);
+        }
+
+        if(sum < min_sum){
+            min_sum = sum;
+            medoid = this->node_to_point_map[i];
+        }
+    }
+
+    return medoid;
+    
+}
+template <typename datatype>
+void ANN<datatype>::Vamana(float alpha,int L,int R){
+   
+    this->G->enforceRegular(R);
+
+    //Get medoid of dataset
+    std::vector<datatype> medoid = this->getMedoid();
+
+    //Get a random permutation of 1 to n
+    std::vector<int> perm;
+
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
+        perm.push_back(i);
+    }
+
+    unsigned seed = 0;
+
+    std::shuffle(perm.begin(),perm.end(),std::default_random_engine(seed));
+
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
+        int p = perm[i];
+        
+        std::set<std::vector<datatype>> L_set;
+        L_set = this->greedySearch(medoid,this->node_to_point_map[p],1,L);
+        
+        // Asume greedySearch also returns Visited
+        // #TODO This is a placeholder
+        std::vector<datatype> point = this->node_to_point_map[p];
+        CompareVectors<datatype> compare(point);
+        std::set<std::vector<datatype>, CompareVectors<datatype>> Visited(compare);        
+        
+        this->robustPrune(point,Visited,alpha,R);
+
+
+        std::vector<std::vector<datatype>> neighbours;
+        this->neighbourNodes(this->node_to_point_map[p],neighbours);
+        for(auto neighbour:neighbours){
+            if((this->G->countNeighbours(this->point_to_node_map[neighbour])+1) > R){
+                std::vector<datatype> point = this->node_to_point_map[p];
+                CompareVectors<datatype> compare(point);
+                std::set<std::vector<datatype>, CompareVectors<datatype>> temp(compare);
+                temp.insert(point);
+
+                this->robustPrune(neighbour,temp,alpha,R);
+            }
+            else{
+                this->G->addEdge(this->point_to_node_map[neighbour],p);
+            }
+        }
+
+    }
+}
+
 // Explicit instantiation of ANN class for datatype int, float and unsigned char
 template class ANN<int>;
 template class ANN<float>;
@@ -260,3 +337,23 @@ template void ANN<long>::robustPrune<CompareVectors<long>>(
     float, 
     int
 );
+
+
+
+
+
+
+/*
+Graph Vamana(void){
+    Graph * R_Regular_Graph = new graph(...);
+    ANN * ann = new ANN(R_Regular_Graph);
+
+    copy ann->G;
+    delete ann;
+    return copy;
+
+}
+
+
+
+*/

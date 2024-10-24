@@ -10,6 +10,7 @@
 #include <iterator> 
 #include "graph.h"
 #include "utils_ann.h"
+#include <random>
 
 template <class datatype>
 class ANN{
@@ -24,6 +25,7 @@ private:
 
     bool checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit);
     bool checkErrorsRobust(std::vector<datatype> point, const float alpha, const int degree_bound);
+    std::vector<datatype> getMedoid();
 
 public:
     ANN(const std::vector<std::vector<datatype>>& points);
@@ -31,7 +33,11 @@ public:
 
     std::set<std::vector<datatype>> greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit);
     template <typename Compare>
+
     void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound);
+
+    void Vamana(float alpha,int L,int R);
+    
     bool checkGraph(std::vector<std::vector<int>> edges);
 };
 
