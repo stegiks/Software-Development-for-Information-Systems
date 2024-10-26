@@ -20,7 +20,7 @@ void ANN<datatype>::neighbourNodes(std::vector<datatype> point, std::vector<std:
 
     // Retrieve the node index for the point
     int node = this->point_to_node_map[point];
-    std::vector<int> neighbour_indices = this->G->getNeighbours(node);
+    std::unordered_set<int>& neighbour_indices = this->G->getNeighbours(node);
 
     // Convert the neighbor indices back to points
     for(int index : neighbour_indices)
@@ -43,24 +43,23 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points){
 }
 
 template <typename datatype>
-ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::vector<int>>& edges) {
+ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges) {
     std::size_t num_nodes = points.size();
 
     int node_index = 0;
 
-    for (const auto& point : points) {
+    for(const auto& point : points){
         this->node_to_point_map.push_back(point);
         this->point_to_node_map[point] = node_index;
         node_index++;
     }
 
-    if (edges.empty() || edges[0].empty() || edges.size() != num_nodes || edges[0].size() != num_nodes) {
+    if(edges.empty() || edges.size() != num_nodes){
         this->G = new Graph(num_nodes);  // Initialize graph with number of points
-    } else {
-        this->G = new Graph(edges);  // Initialize graph with edges
     }
-
-    
+    else{
+        this->G = new Graph(edges);  // Initialize graph with edges
+    } 
 }
 
 template<typename datatype>
@@ -224,7 +223,7 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
 }
 
 template <typename datatype>
-bool ANN<datatype>::checkGraph(std::vector<std::vector<int>> edges){
+bool ANN<datatype>::checkGraph(std::vector<std::unordered_set<int>> edges){
     this->G->printGraph();
     return this->G->checkSimilarity(edges);
 }
@@ -337,23 +336,3 @@ template void ANN<long>::robustPrune<CompareVectors<long>>(
     float, 
     int
 );
-
-
-
-
-
-
-/*
-Graph Vamana(void){
-    Graph * R_Regular_Graph = new graph(...);
-    ANN * ann = new ANN(R_Regular_Graph);
-
-    copy ann->G;
-    delete ann;
-    return copy;
-
-}
-
-
-
-*/

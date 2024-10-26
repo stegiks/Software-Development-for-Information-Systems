@@ -3,82 +3,98 @@
 Graph::Graph(std::size_t n){
     // Randomly generate a graph with n nodes
     srand(time(NULL));
-    this->adj_matrix = std::vector<std::vector<int>>(n, std::vector<int>(n, 0));
+    this->adj_list = std::vector<std::unordered_set<int>>(n);
     for(std::size_t i = 0; i < n; i++){
-        for(std::size_t j = 1; j < n; j++){
-            if((rand() % 2 == 1) && i != j){
-                addEdge(i, j);
+        for(std::size_t j = 0; j < n; j++){
+            if(rand() % 2 == 1 && i != j){
+                this->addEdge(i, j);
             }
         }
     }
+    this->num_nodes = n;
 }
 
-Graph::Graph(std::vector<std::vector<int>> edges) : adj_matrix(edges){}
+Graph::Graph(std::vector<std::unordered_set<int>> edges){
+    this->adj_list = edges;
+    this->num_nodes = edges.size();
+}
 
 void Graph::addEdge(int a, int b){
-    this->adj_matrix[a][b] = 1;
+    if((std::size_t)a >= this->num_nodes || (std::size_t)b >= this->num_nodes){
+        throw std::out_of_range("Node index out of range");
+    }
+    this->adj_list.at(a).insert(b);
 }
 
 void Graph::removeEdge(int a, int b){
-    this->adj_matrix[a][b] = 0;
+    if((std::size_t)a >= this->num_nodes || (std::size_t)b >= this->num_nodes){
+        throw std::out_of_range("Node index out of range");
+    }
+    this->adj_list.at(a).erase(b);
 }
 
-std::vector<int> Graph::getNeighbours(int node){
-    std::vector<int> neighbours;
-    for(std::size_t i = 0; i < this->adj_matrix[node].size(); i++){
-        if(this->adj_matrix[node][i] == 1){
-            neighbours.push_back(i);
-        }
+std::unordered_set<int>& Graph::getNeighbours(int node){
+    if((std::size_t)node >= this->num_nodes){
+        throw std::out_of_range("Node index out of");
     }
-    return neighbours;
+    return this->adj_list.at(node);
 }
 
 void Graph::removeNeighbours(int node){
-    for(std::size_t i = 0; i < this->adj_matrix[node].size(); i++){
-        this->adj_matrix[node][i] = 0;
+    if((std::size_t)node >= this->num_nodes){
+        throw std::out_of_range("Node index out of range");
     }
+    this->adj_list.at(node).clear();
 }
 
 int Graph::countNeighbours(int node){
-    int count = 0;
-    for(std::size_t i = 0; i < this->adj_matrix[node].size(); i++){
-        if(this->adj_matrix[node][i] == 1){
-            count++;
-        }
+    if((std::size_t)node >= this->num_nodes){
+        throw std::out_of_range("Node index out of range");
     }
-    return count;
+    return this->adj_list.at(node).size();
 }
 
-bool Graph::checkSimilarity(std::vector<std::vector<int>> edges){
-    // Check if the adjacency matrix has the same dimensions as the input matrix
-    if(this->adj_matrix.size() != edges.size())
+bool Graph::checkSimilarity(std::vector<std::unordered_set<int>> edges){
+    // Check if the adjacency list has the same dimensions as the input matrix
+    if(this->adj_list.size() != edges.size())
         return false;
 
-
-    for(std::size_t i = 0; i < this->adj_matrix.size(); i++)
-        for(std::size_t j = 0; j < this->adj_matrix[i].size(); j++)
-            if(this->adj_matrix[i][j] != edges[i][j])
-                return false;
+    for(std::size_t i = 0; i < this->adj_list.size(); i++)
+        if(this->adj_list.at(i) != edges.at(i))
+            return false;
 
     return true;
 }
 
 void Graph::printGraph(){
-    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
-        for(std::size_t j = 0; j < this->adj_matrix[i].size(); j++){
-            std::cout << this->adj_matrix[i][j] << " ";
+    for(std::size_t i = 0; i < this->adj_list.size(); i++){
+        std::cout << "Node " << i << " : ";
+        for(auto neighbour : this->adj_list.at(i)){
+            std::cout << neighbour << " ";
         }
         std::cout << std::endl;
     }
 }
 
+// If the graph is not regular, enforce it to be regular
 void Graph::enforceRegular(int R){
-    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
-        std::vector<int> neighbours = getNeighbours(i);
-        if(neighbours.size() >size_t(R)){
-            std::shuffle(neighbours.begin(), neighbours.end(),std::default_random_engine(0));
-            for(std::size_t j = R; j < neighbours.size(); j++){
-                removeEdge(i, neighbours[j]);
+    for(std::size_t i = 0; i < this->adj_list.size(); i++){
+        std::unordered_set<int>& neighbours = this->getNeighbours(i);
+
+        // If node has more than R neighbors, remove random edges
+        while(neighbours.size() > static_cast<size_t>(R)){
+            std::vector<int> neighboursVec(neighbours.begin(), neighbours.end());
+            int randomIndex = rand() % neighboursVec.size();
+            int j = neighboursVec[randomIndex];
+
+            neighbours.erase(j);
+        }
+
+        // If node has fewer than R neighbors, add random edges
+        while(neighbours.size() < static_cast<size_t>(R)){
+            std::size_t j = rand() % this->adj_list.size();
+            if(i != j && neighbours.find(j) == neighbours.end()){
+                neighbours.insert(j);
             }
         }
     }
