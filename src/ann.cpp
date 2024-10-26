@@ -20,7 +20,7 @@ void ANN<datatype>::neighbourNodes(std::vector<datatype> point, std::vector<std:
 
     // Retrieve the node index for the point
     int node = this->point_to_node_map[point];
-    std::vector<int> neighbour_indices = this->G->getNeighbours(node);
+    const std::unordered_set<int>& neighbour_indices = this->G->getNeighbours(node);
 
     // Convert the neighbor indices back to points
     for(int index : neighbour_indices)

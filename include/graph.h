@@ -6,12 +6,14 @@
 #include <ctime>
 #include <algorithm>
 #include <unordered_set>
+#include <stdexcept>
 
 // Class to represent a graph
 class Graph{
 private:
     // Adjacency matrix to store graph edges
     std::vector<std::unordered_set<int>> adj_list;
+    std::size_t num_nodes;
 
 public:
     Graph(std::size_t n);
@@ -22,7 +24,7 @@ public:
     void removeEdge(int a, int b);
     
     //Function to get neighbours of a node
-    std::vector<int> getNeighbours(int node);
+    const std::unordered_set<int>& getNeighbours(int node);
 
     void removeNeighbours(int node);
     int countNeighbours(int node);

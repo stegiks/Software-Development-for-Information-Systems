@@ -120,7 +120,6 @@ TEST(GreedySearch, BaseVector){
 // Test one point graph
 TEST(GreedySearch, OnePoint){
     std::vector<std::vector<int>> points = {{1, 2, 3}};
-    // ! Maybe {{0}} is better
     std::vector<std::unordered_set<int>> edges = {{}};
 
     ANN<int> ann(points, edges);
