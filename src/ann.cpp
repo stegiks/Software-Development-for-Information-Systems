@@ -20,7 +20,7 @@ void ANN<datatype>::neighbourNodes(std::vector<datatype> point, std::vector<std:
 
     // Retrieve the node index for the point
     int node = this->point_to_node_map[point];
-    const std::unordered_set<int>& neighbour_indices = this->G->getNeighbours(node);
+    std::unordered_set<int>& neighbour_indices = this->G->getNeighbours(node);
 
     // Convert the neighbor indices back to points
     for(int index : neighbour_indices)
@@ -336,23 +336,3 @@ template void ANN<long>::robustPrune<CompareVectors<long>>(
     float, 
     int
 );
-
-
-
-
-
-
-/*
-Graph Vamana(void){
-    Graph * R_Regular_Graph = new graph(...);
-    ANN * ann = new ANN(R_Regular_Graph);
-
-    copy ann->G;
-    delete ann;
-    return copy;
-
-}
-
-
-
-*/

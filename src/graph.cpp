@@ -33,7 +33,7 @@ void Graph::removeEdge(int a, int b){
     this->adj_list.at(a).erase(b);
 }
 
-const std::unordered_set<int>& Graph::getNeighbours(int node){
+std::unordered_set<int>& Graph::getNeighbours(int node){
     if((std::size_t)node >= this->num_nodes){
         throw std::out_of_range("Node index out of");
     }
@@ -76,13 +76,25 @@ void Graph::printGraph(){
     }
 }
 
+// If the graph is not regular, enforce it to be regular
 void Graph::enforceRegular(int R){
-    for(std::size_t i = 0; i < this->adj_matrix.size(); i++){
-        std::vector<int> neighbours = getNeighbours(i);
-        if(neighbours.size() >size_t(R)){
-            std::shuffle(neighbours.begin(), neighbours.end(),std::default_random_engine(0));
-            for(std::size_t j = R; j < neighbours.size(); j++){
-                removeEdge(i, neighbours[j]);
+    for(std::size_t i = 0; i < this->adj_list.size(); i++){
+        std::unordered_set<int>& neighbours = this->getNeighbours(i);
+
+        // If node has more than R neighbors, remove random edges
+        while(neighbours.size() > static_cast<size_t>(R)){
+            std::vector<int> neighboursVec(neighbours.begin(), neighbours.end());
+            int randomIndex = rand() % neighboursVec.size();
+            int j = neighboursVec[randomIndex];
+
+            neighbours.erase(j);
+        }
+
+        // If node has fewer than R neighbors, add random edges
+        while(neighbours.size() < static_cast<size_t>(R)){
+            std::size_t j = rand() % this->adj_list.size();
+            if(i != j && neighbours.find(j) == neighbours.end()){
+                neighbours.insert(j);
             }
         }
     }

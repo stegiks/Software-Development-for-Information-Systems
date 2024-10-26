@@ -119,3 +119,23 @@ TEST(GraphTest, UnexpectedActions){
     // Access an out of bounds node
     EXPECT_THROW(graph.getNeighbours(10), std::out_of_range);
 }
+
+// Test for enforcing a regular graph degree
+TEST(GraphTest, EnforceRegularDegree){
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 2},       
+        {0},          
+        {0, 3, 4},    
+        {2, 4},       
+        {2, 3}        
+    };
+
+    Graph graph(edges);
+    int R = 2;
+    graph.enforceRegular(R);
+
+    // Check that each node has exactly R neighbors
+    for(std::size_t i = 0; i < edges.size(); i++){
+        EXPECT_EQ(graph.countNeighbours(i), R) << "Node " << i << " does not have " << R << " neighbors.";
+    }
+}
