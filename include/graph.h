@@ -1,12 +1,16 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <vector>
 #include <iostream>
 #include <ctime>
 #include <algorithm>
 #include <unordered_set>
 #include <stdexcept>
+#include <random>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <iterator> 
 
 // Class to represent a graph
 class Graph{
@@ -31,6 +35,8 @@ public:
 
     bool checkSimilarity(std::vector<std::unordered_set<int>> edges);
     void printGraph();
+
+    void enforceRegular(int R);
 };
 
 #endif // graph.h
