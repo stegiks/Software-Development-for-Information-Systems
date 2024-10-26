@@ -31,12 +31,14 @@ private:
 public:
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
-
-    std::set<std::vector<datatype>> greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit);
-    template <typename Compare>
-
-    void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound);
+    ~ANN();
     bool checkGraph(std::vector<std::unordered_set<int>> edges);
+    bool checkNeighbour(std::vector<datatype> a, std::vector<datatype> b);
+
+    template<typename Compare>
+    void greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::set<std::vector<datatype>, Compare>& Visited, CompareVectors<datatype>& compare);
+    template <typename Compare>
+    void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound);
     void Vamana(float alpha,int L,int R);
 };
 

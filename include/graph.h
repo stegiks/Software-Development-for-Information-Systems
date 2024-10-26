@@ -27,8 +27,11 @@ public:
     void addEdge(int a, int b);
     void removeEdge(int a, int b);
     
-    //Function to get neighbours of a node
+    // Function to get neighbours of a node
     std::unordered_set<int>& getNeighbours(int node);
+
+    // Function to determine if a node is a neighbour
+    bool isNeighbour(int node, int neighbour);
 
     void removeNeighbours(int node);
     int countNeighbours(int node);

@@ -54,6 +54,13 @@ int Graph::countNeighbours(int node){
     return this->adj_list.at(node).size();
 }
 
+bool Graph::isNeighbour(int node, int neighbour){
+    if((std::size_t)node >= this->num_nodes){
+        throw std::out_of_range("Node index out of range");
+    }
+    return this->adj_list.at(node).find(neighbour) != this->adj_list.at(node).end();
+}
+
 bool Graph::checkSimilarity(std::vector<std::unordered_set<int>> edges){
     // Check if the adjacency list has the same dimensions as the input matrix
     if(this->adj_list.size() != edges.size())

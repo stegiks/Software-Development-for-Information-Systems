@@ -11,14 +11,12 @@ std::vector<std::vector<T>> VectorParser::parseVecs(){
     }
 
     std::vector<std::vector<T>> vec;
-    while(file){
+    while(true){
         
         // Read the dimension of the vector
         int dim;
         file.read((char*)&dim, sizeof(int));
-        if(!file){
-            std::runtime_error("Error reading vector dimension");
-        }
+        if(!file) break;    // Break if we reached EOF
 
         // Read the vector
         std::vector<T> vec_temp(dim);
