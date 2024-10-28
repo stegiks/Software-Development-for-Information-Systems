@@ -22,7 +22,6 @@ private:
 
     template <typename Compare>
     void pruneSet(std::set<std::vector<datatype>, Compare>& myset, int k);
-    void neighbourNodes(std::vector<datatype> point, std::vector<std::vector<datatype>>& neighbours);
 
     bool checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit);
     bool checkErrorsRobust(std::vector<datatype> point, const float alpha, const int degree_bound);
@@ -40,6 +39,8 @@ public:
     template <typename Compare>
     void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound);
     void Vamana(float alpha,int L,int R);
-};
 
+    void neighbourNodes(std::vector<datatype> point, std::vector<std::vector<datatype>>& neighbours);
+    int countNeighbours(int node);
+};
 #endif // ann.h

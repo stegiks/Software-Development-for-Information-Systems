@@ -28,6 +28,11 @@ void ANN<datatype>::neighbourNodes(std::vector<datatype> point, std::vector<std:
 
 }
 
+template <typename datatype>
+int ANN<datatype>::countNeighbours(int node){
+    return this->G->countNeighbours(node);
+}
+
 // Constructor for building a random graph
 template <typename datatype>
 ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points){
@@ -222,6 +227,7 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
         for(auto it = candidate_set.begin(); it != candidate_set.end();){
             const auto& element = *it;
 
+            // printf("Comparing %f and %f\nPoints: closest_point %d, element %d, point %d\n", alpha * float(calculateDistance(closest_point, element)), float(calculateDistance(element, point)),this->point_to_node_map[closest_point],this->point_to_node_map[element],this->point_to_node_map[point]);
             if(alpha * float(calculateDistance(closest_point, element)) <= float(calculateDistance(element, point)))
                 it = candidate_set.erase(it);
             else

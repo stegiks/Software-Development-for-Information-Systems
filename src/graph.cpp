@@ -4,6 +4,7 @@ Graph::Graph(std::size_t n){
     // Randomly generate a graph with n nodes
     srand(time(NULL));
     this->adj_list = std::vector<std::unordered_set<int>>(n);
+    this->num_nodes = n;
     for(std::size_t i = 0; i < n; i++){
         for(std::size_t j = 0; j < n; j++){
             if(rand() % 2 == 1 && i != j){
@@ -11,7 +12,7 @@ Graph::Graph(std::size_t n){
             }
         }
     }
-    this->num_nodes = n;
+    
 }
 
 Graph::Graph(std::vector<std::unordered_set<int>> edges){
