@@ -27,6 +27,8 @@ private:
     bool checkErrorsRobust(std::vector<datatype> point, const float alpha, const int degree_bound);
     std::vector<datatype> getMedoid();
 
+    friend class ANNTest;  // Used for testing private methods
+
 public:
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);

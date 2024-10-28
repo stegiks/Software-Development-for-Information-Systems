@@ -294,12 +294,12 @@ void ANN<datatype>::Vamana(float alpha,int L,int R){
 
         std::vector<std::vector<datatype>> neighbours;
         this->neighbourNodes(point, neighbours);
-        
+
         for(auto j : neighbours){
             
             // If j hasn't an outgoing edge to point, then offset is 1
             int offset = this->checkNeighbour(j,point) ? 0 : 1;
-
+            // int offset = 0;
             if((this->G->countNeighbours(this->point_to_node_map[j]) + offset) > R){
                 std::set<std::vector<datatype>, CompareVectors<datatype>> temp(compare);
                 
@@ -319,7 +319,6 @@ void ANN<datatype>::Vamana(float alpha,int L,int R){
                 this->G->addEdge(this->point_to_node_map[j], p);
             }
         }
-
     }
 }
 

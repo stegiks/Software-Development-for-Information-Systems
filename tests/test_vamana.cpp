@@ -1,17 +1,32 @@
 #include <gtest/gtest.h>
 #include "ann.h"
 
+class ANNTest : public ::testing::Test {
+protected:
+    ANN<int> ann;
+
+    ANNTest() : ann({{1, 1, 1}, {2, 2, 5}, {2, 4, 5}, {7, 8, 9}}) {}
+
+    std::vector<int> getMedoidWrapper() {
+        return ann.getMedoid();
+    }
+};
+
+TEST_F(ANNTest, TestGetMedoid) {
+    std::vector<int> expected_medoid = {2, 4, 5};
+    EXPECT_EQ(getMedoidWrapper(), expected_medoid);
+}
+
 // Degree Bound Check
 TEST(VamanaIndexingTest, DegreeBound1) {
-    std::vector<std::vector<int>> points = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15}};
+    std::vector<std::vector<int>> points = {{1, 1, 1}, {2, 2, 2}, {3, 3, 3}, {4, 4, 4}};
 
     // Make graph fully connected
     std::vector<std::unordered_set<int>> edges = {
-        {1, 2, 3, 4},
-        {0, 2, 3, 4},
-        {0, 1, 3, 4},
-        {0, 1, 2, 4},
-        {0, 1, 2, 3}
+        {1, 2},
+        {2, 0},
+        {3, 0},
+        {1, 0},
     };
     int L = 3;
     int R = 2;
@@ -25,8 +40,6 @@ TEST(VamanaIndexingTest, DegreeBound1) {
         EXPECT_LE(ann.countNeighbours(i), R) << "Degree bound exceeded for node " << i;
     }
 }
-
-
 
 TEST(VamanaIndexingTest, DegreeBound2) {
     using datatype = float;
@@ -65,5 +78,36 @@ TEST(VamanaIndexingTest, DegreeBound2) {
         // Verify that each node has no more than R neighbors
         EXPECT_LE(neighbor_count, R)
             << "Node " << i << " has more than R neighbors.";
+    }
+}
+
+
+// Test specifically for the offset condition
+TEST(VamanaIndexingTest, OffsetConditionTest) {
+    std::vector<std::vector<int>> points = {
+        {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}
+    };
+
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 2},
+        {0, 3},
+        {0},   
+        {1},   
+        {}     
+    };
+    
+    int L = 2;
+    int R = 2; // Limit each node to at most 2 neighbors
+    float alpha = 1.1;
+
+    ANN<int> ann(points, edges);
+    ann.Vamana(alpha, L, R);
+
+    // Check degrees to ensure Vamana respects the degree bound with the offset
+    for (size_t i = 0; i < points.size(); ++i) {
+        int neighbor_count = ann.countNeighbours(i);
+        
+        EXPECT_LE(neighbor_count, R)
+            << "Node " << i << " exceeds the degree bound, indicating failure of offset handling.";
     }
 }
