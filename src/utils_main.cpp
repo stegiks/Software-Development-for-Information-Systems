@@ -8,7 +8,12 @@ std::string findExtension(const std::string& file_path){
     return file_path.substr(pos + 1);
 }
 
-bool validateExtension(const std::string& extension_base, const std::string& extension_query, const std::string& extension_gt){
+bool validateExtension(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, const std::string& file_format){
+    
+    std::string extension_base = findExtension(file_path_base);
+    std::string extension_query = findExtension(file_path_query);
+    std::string extension_gt = findExtension(file_path_gt);
+    
     if(extension_base != extension_query){
         std::cerr << RED << "Error : Base and query files have different extensions" << RESET << std::endl;
         return false;
@@ -20,6 +25,11 @@ bool validateExtension(const std::string& extension_base, const std::string& ext
         return false;
     }
 
+    if(file_format != extension_base){
+        std::cerr << RED << "Error : File format and extension base are not the same" << RESET << std::endl;
+        return false;
+    }
+
     if(extension_gt != "ivecs"){
         std::cerr << RED << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
         std::cerr << BLUE << "Valid extension is : ivecs" << RESET << std::endl;
@@ -28,3 +38,7 @@ bool validateExtension(const std::string& extension_base, const std::string& ext
 
     return true;
 }
+
+// template <typename datatype>
+// void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_format, const std::string& file_path_gt, float alpha, int R, int L){
+// }

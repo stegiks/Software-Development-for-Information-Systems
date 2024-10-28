@@ -1,4 +1,5 @@
 #include "ann.h"
+#include "defs.h"
 
 // Prune the set to retain only the k closest points
 template <typename datatype>
@@ -243,10 +244,10 @@ std::vector<datatype> ANN<datatype>::getMedoid(){
     // Get the point with the minimum sum of distances
     float min_sum = std::numeric_limits<float>::max();
 
-    for(size_t i=0;i<this->node_to_point_map.size();i++){
+    for(size_t i=0; i<this->node_to_point_map.size(); i++){
         
         float sum = 0;
-        for(size_t j=0;j<this->node_to_point_map.size();j++){
+        for(size_t j=0; j<this->node_to_point_map.size(); j++){
             sum += calculateDistance(this->node_to_point_map[i],this->node_to_point_map[j]);
         }
 
@@ -260,7 +261,7 @@ std::vector<datatype> ANN<datatype>::getMedoid(){
     
 }
 template <typename datatype>
-void ANN<datatype>::Vamana(float alpha,int L,int R){
+void ANN<datatype>::Vamana(float alpha, int L, int R){
    
     this->G->enforceRegular(R);
 
@@ -279,7 +280,7 @@ void ANN<datatype>::Vamana(float alpha,int L,int R){
 
     for(size_t i = 0; i < this->node_to_point_map.size(); i++){
         int p = perm[i];
-        
+
         // Get the point corresponding to the node
         // Create the NNS and Visited sets and pass them as references
         std::vector<datatype> point = this->node_to_point_map[p];

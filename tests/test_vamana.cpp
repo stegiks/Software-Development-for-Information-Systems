@@ -63,9 +63,9 @@ TEST(VamanaIndexingTest, DegreeBound2) {
     ANN<datatype> ann(points, edges);
 
     // Set Vamana algorithm parameters
-    float alpha = 1.1;   // Controls the pruning aggressiveness
-    int L = 2;           // Number of potential connections to explore per node
-    int R = 2;           // Max neighbors each node can retain after pruning
+    float alpha = 1.1;   
+    int L = 2;           
+    int R = 2;           
 
     // Run the Vamana algorithm
     ann.Vamana(alpha, L, R);
