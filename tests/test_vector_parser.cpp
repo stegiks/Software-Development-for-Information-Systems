@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "vector_parser.h"
+#include "utils_main.h"
 
 // Create a file using the format described bellow
 /*
@@ -23,54 +23,53 @@ void createFile(std::string& file_path, std::vector<std::vector<datatype>>& floa
 
 TEST(VectorParser, parseVec){
     // Floats
-    std::string file_path = "test_floats.fvecs";
-    std::vector<std::vector<float>> float_vectors = {
-        {1.1, 2.1, 3.1},
-        {4.1, 5.1, 6.1},
-        {7.1, 8.1, 9.1}
-    };
+    {
+        std::string file_path = "test_floats.fvecs";
+        std::vector<std::vector<float>> float_vectors = {
+            {1.1f, 2.1f, 3.1f},
+            {4.1f, 5.1f, 6.1f},
+            {7.1f, 8.1f, 9.1f}
+        };
 
-    createFile(file_path, float_vectors);
+        createFile(file_path, float_vectors);
 
-    VectorParser float_parser(file_path, FileFormat::FVECS);
-    std::vector<std::vector<float>> parsed_vectors = float_parser.parseFloats();
+        std::vector<std::vector<float>> parsed_vectors = parseVecs<float>(file_path);
 
-    EXPECT_EQ(float_vectors, parsed_vectors);
-
-    // Use remove and c_str to convert the string to a const char* and delete it
-    std::remove(file_path.c_str());
+        EXPECT_EQ(float_vectors, parsed_vectors);
+        std::remove(file_path.c_str());
+    }
 
     // Ints
-    file_path = "test_ints.ivecs";
-    std::vector<std::vector<int>> int_vectors = {
-        {100, 200, 300},
-        {1000, 2000, 3000},
-        {10000, 20000, 30000}
-    };
+    {
+        std::string file_path = "test_ints.ivecs";
+        std::vector<std::vector<int>> int_vectors = {
+            {100, 200, 300},
+            {1000, 2000, 3000},
+            {10000, 20000, 30000}
+        };
 
-    createFile(file_path, int_vectors);
+        createFile(file_path, int_vectors);
 
-    VectorParser int_parser(file_path, FileFormat::IVECS);
-    std::vector<std::vector<int>> parsed_int_vectors = int_parser.parseInts();
+        std::vector<std::vector<int>> parsed_vectors = parseVecs<int>(file_path);
 
-    EXPECT_EQ(int_vectors, parsed_int_vectors);
-
-    std::remove(file_path.c_str());
+        EXPECT_EQ(int_vectors, parsed_vectors);
+        std::remove(file_path.c_str());
+    }
 
     // Bytes
-    file_path = "test_bytes.bvecs";
-    std::vector<std::vector<unsigned char>> byte_vectors = {
-        {'a', 'b', 'c'},
-        {'d', 'e', 'f'},
-        {'g', 'h', 'i'}
-    };
+    {
+        std::string file_path = "test_bytes.bvecs";
+        std::vector<std::vector<unsigned char>> byte_vectors = {
+            {'a', 'b', 'c'},
+            {'d', 'e', 'f'},
+            {'g', 'h', 'i'}
+        };
 
-    createFile(file_path, byte_vectors);
+        createFile(file_path, byte_vectors);
 
-    VectorParser byte_parser(file_path, FileFormat::BVECS);
-    std::vector<std::vector<unsigned char>> parsed_byte_vectors = byte_parser.parseBytes();
+        std::vector<std::vector<unsigned char>> parsed_vectors = parseVecs<unsigned char>(file_path);
 
-    EXPECT_EQ(byte_vectors, parsed_byte_vectors);
-
-    std::remove(file_path.c_str());
+        EXPECT_EQ(byte_vectors, parsed_vectors);
+        std::remove(file_path.c_str());
+    }
 }
