@@ -262,7 +262,7 @@ std::vector<datatype> ANN<datatype>::getMedoid(){
 }
 template <typename datatype>
 void ANN<datatype>::Vamana(float alpha, int L, int R){
-   
+    
     this->G->enforceRegular(R);
 
     //Get medoid of dataset

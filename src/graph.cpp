@@ -90,12 +90,13 @@ void Graph::enforceRegular(int R){
         std::unordered_set<int>& neighbours = this->getNeighbours(i);
 
         // If node has more than R neighbors, remove random edges
-        while(neighbours.size() > static_cast<size_t>(R)){
+        if(neighbours.size() > static_cast<size_t>(R)){
             std::vector<int> neighboursVec(neighbours.begin(), neighbours.end());
-            int randomIndex = rand() % neighboursVec.size();
-            int j = neighboursVec[randomIndex];
-
-            neighbours.erase(j);
+            std::shuffle(neighboursVec.begin(),neighboursVec.end(),std::default_random_engine(0));
+            for(std::size_t j = R; j < neighboursVec.size(); ++j){
+                std::cout << "The node ID selected is " << neighboursVec[j] << std::endl;
+                neighbours.erase(neighboursVec[j]);
+            }
         }
 
         // If node has fewer than R neighbors, add random edges
