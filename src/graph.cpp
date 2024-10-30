@@ -94,7 +94,6 @@ void Graph::enforceRegular(int R){
             std::vector<int> neighboursVec(neighbours.begin(), neighbours.end());
             std::shuffle(neighboursVec.begin(),neighboursVec.end(),std::default_random_engine(0));
             for(std::size_t j = R; j < neighboursVec.size(); ++j){
-                std::cout << "The node ID selected is " << neighboursVec[j] << std::endl;
                 neighbours.erase(neighboursVec[j]);
             }
         }

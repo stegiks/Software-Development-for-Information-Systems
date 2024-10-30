@@ -17,7 +17,7 @@ void ANN<datatype>::pruneSet(std::set<std::vector<datatype>, Compare>& myset, in
 
 // Return the neighbors of a point
 template <typename datatype>
-void ANN<datatype>::neighbourNodes(std::vector<datatype> point, std::vector<std::vector<datatype>>& neighbours){
+void ANN<datatype>::neighbourNodes(std::vector<datatype>& point, std::vector<std::vector<datatype>>& neighbours){
 
     // Retrieve the node index for the point
     int node = this->point_to_node_map[point];
@@ -151,22 +151,33 @@ bool ANN<datatype>::checkNeighbour(std::vector<datatype> a, std::vector<datatype
 // Greedy search algorithm to find the nearest neighbours
 template <typename datatype>
 template <typename Compare>
-void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::set<std::vector<datatype>, Compare>& Visited, CompareVectors<datatype>& compare){
-    
+void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::set<std::vector<datatype>, Compare>& Visited, CompareVectors<datatype>& compare, bool do_timing){
     // Error handling
     if(this->checkErrorsGreedy(start, query, k, upper_limit)){
         NNS.clear();
         return;
     }
 
+    // Timing variables
+    double differenceTime = 0.0;
+    double updateTime = 0.0;
+    int loopIterations = 0;
+
     while(true){
+        auto startDifference = std::chrono::high_resolution_clock::now();
         std::set<std::vector<datatype>, CompareVectors<datatype>> difference(compare);
         std::set_difference(NNS.begin(), NNS.end(), Visited.begin(), Visited.end(),
                     std::inserter(difference, difference.end()), compare);
 
+        auto endDifference = std::chrono::high_resolution_clock::now();
+        if(do_timing)
+            differenceTime += std::chrono::duration_cast<std::chrono::microseconds>(endDifference - startDifference).count();
+
         // If the difference is empty, break out of the loop
         if(difference.empty())
             break;
+        
+        loopIterations++;
 
         // Get the index of the closest point
         std::vector<datatype> closest_point = *(difference.begin());
@@ -176,20 +187,29 @@ void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::
         this->neighbourNodes(closest_point, neighbours);
 
         // Update NNS set with neighbours of closest_point
+        auto startUpdate = std::chrono::high_resolution_clock::now();
         for(const auto& neighbour : neighbours)
             NNS.insert(neighbour);
 
         // Update Visited set with closest_point
         Visited.insert(closest_point);
+        auto endUpdate = std::chrono::high_resolution_clock::now();
+        if(do_timing)
+            updateTime += std::chrono::duration_cast<std::chrono::microseconds>(endUpdate - startUpdate).count();
 
         // Update NNS to retain upper_limit closest points
         if(NNS.size() > static_cast<std::size_t>(upper_limit))
             this->pruneSet(NNS, upper_limit);
-        
     }
 
     // Return k closest points to Xq, using regular set
     this->pruneSet(NNS, k);
+
+    if(do_timing){
+        std::cout << "  [greedySearch] loopIterations: " << loopIterations << std::endl;
+        std::cout << "  [greedySearch] differenceTime: " << differenceTime / 1000 << " ms" << std::endl;
+        std::cout << "  [greedySearch] updateTime: " << updateTime / 1000 << " ms" << std::endl;
+    }
 }
 
 template <typename datatype>
@@ -238,7 +258,7 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
 }
 
 template <typename datatype>
-std::vector<datatype> ANN<datatype>::getMedoid(){
+void ANN<datatype>::calculateMedoid(){
     std::vector<datatype> medoid;
 
     // Get the point with the minimum sum of distances
@@ -257,18 +277,36 @@ std::vector<datatype> ANN<datatype>::getMedoid(){
         }
     }
 
-    return medoid;
-    
+    this->cached_medoid = std::move(medoid);
 }
+
+template <typename datatype>
+const std::vector<datatype>& ANN<datatype>::getMedoid(){
+    if(!this->cached_medoid.has_value())
+        this->calculateMedoid();
+
+    return this->cached_medoid.value();
+}
+
 template <typename datatype>
 void ANN<datatype>::Vamana(float alpha, int L, int R){
     
     this->G->enforceRegular(R);
 
-    //Get medoid of dataset
-    std::vector<datatype> medoid = this->getMedoid();
+    std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
 
-    //Get a random permutation of 1 to n
+    double medoidTime = 0.0;
+
+    // Calculate medoid of dataset
+    auto startMedoid = std::chrono::high_resolution_clock::now();
+    this->calculateMedoid();
+    auto endMedoid = std::chrono::high_resolution_clock::now();
+    medoidTime = std::chrono::duration_cast<std::chrono::milliseconds>(endMedoid - startMedoid).count();
+
+    std::cout << "Medoid calculation time: " << medoidTime << " ms" << std::endl;
+    std::cout << GREEN << "Medoid calculated" << RESET << std::endl;
+
+    // Get a random permutation of 1 to n
     std::vector<int> perm;
 
     for(size_t i=0;i<this->node_to_point_map.size();i++){
@@ -281,21 +319,45 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
     for(size_t i = 0; i < this->node_to_point_map.size(); i++){
         int p = perm[i];
 
+        // Time vars
+        double greedySearchTime = 0.0;
+        double robustPruneTime = 0.0;
+        double neighbourNodesTime = 0.0;
+        double innerLoopTime = 0.0;
+        double totalTimeOnePoint = 0.0;
+        auto startTotalTimeOnePoint = std::chrono::high_resolution_clock::now();
+
         // Get the point corresponding to the node
         // Create the NNS and Visited sets and pass them as references
         std::vector<datatype> point = this->node_to_point_map[p];
         CompareVectors<datatype> compare(point);
         std::set<std::vector<datatype>, CompareVectors<datatype>> NNS(compare);
         std::set<std::vector<datatype>, CompareVectors<datatype>> Visited(compare);
-        NNS.insert(medoid);
+        NNS.insert(this->cached_medoid.value());
         
         // Return k closest points to Xq (point) and then with robust find "better" neighbours
-        this->greedySearch(medoid, point, 1, L, NNS, Visited, compare);        
-        this->robustPrune(point, Visited, alpha, R);
+        // ! Greedy
+        bool do_timing = (i % 100 == 0);
+        auto startGreedy = std::chrono::high_resolution_clock::now();
+        this->greedySearch(this->cached_medoid.value(), point, 1, L, NNS, Visited, compare, do_timing);    
+        auto endGreedy = std::chrono::high_resolution_clock::now();
+        greedySearchTime = std::chrono::duration_cast<std::chrono::milliseconds>(endGreedy - startGreedy).count();
 
+        // ! Robust
+        auto startPrune = std::chrono::high_resolution_clock::now();
+        this->robustPrune(point, Visited, alpha, R);
+        auto endPrune = std::chrono::high_resolution_clock::now();
+        robustPruneTime = std::chrono::duration_cast<std::chrono::milliseconds>(endPrune - startPrune).count();
+
+        // ! Neighbours
+        auto startNeighbours = std::chrono::high_resolution_clock::now();
         std::vector<std::vector<datatype>> neighbours;
         this->neighbourNodes(point, neighbours);
+        auto endNeighbours = std::chrono::high_resolution_clock::now();
+        neighbourNodesTime = std::chrono::duration_cast<std::chrono::milliseconds>(endNeighbours - startNeighbours).count();
 
+        // ! Inner loop
+        auto startInnerLoop = std::chrono::high_resolution_clock::now();
         for(auto j : neighbours){
             
             // If j hasn't an outgoing edge to point, then offset is 1
@@ -320,6 +382,20 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
                 this->G->addEdge(this->point_to_node_map[j], p);
             }
         }
+        auto endInnerLoop = std::chrono::high_resolution_clock::now();
+        innerLoopTime = std::chrono::duration_cast<std::chrono::milliseconds>(endInnerLoop - startInnerLoop).count();
+
+        auto endTotalTimeOnePoint = std::chrono::high_resolution_clock::now();
+        totalTimeOnePoint = std::chrono::duration_cast<std::chrono::milliseconds>(endTotalTimeOnePoint - startTotalTimeOnePoint).count();
+
+        if(i % 100 == 0){
+            std::cout << "Processing point " << i << std::endl;
+            std::cout << "greedySearchTime: " << greedySearchTime << " ms" << std::endl;
+            std::cout << "robustPruneTime: " << robustPruneTime << " ms" << std::endl;
+            std::cout << "neighbourNodesTime: " << neighbourNodesTime << " ms" << std::endl;
+            std::cout << "innerLoopTime: " << innerLoopTime << " ms" << std::endl;
+            std::cout << "Total time for one point: " << totalTimeOnePoint << " ms" << std::endl << std::endl;
+        }
     }
 }
 
@@ -337,7 +413,8 @@ template void ANN<int>::greedySearch<CompareVectors<int>>(
     int, 
     std::set<std::vector<int>, CompareVectors<int>>&, 
     std::set<std::vector<int>, CompareVectors<int>>&, 
-    CompareVectors<int>&
+    CompareVectors<int>&,
+    bool
 );
 template void ANN<float>::greedySearch<CompareVectors<float>>(
     const std::vector<float>&, 
@@ -346,7 +423,8 @@ template void ANN<float>::greedySearch<CompareVectors<float>>(
     int, 
     std::set<std::vector<float>, CompareVectors<float>>&, 
     std::set<std::vector<float>, CompareVectors<float>>&, 
-    CompareVectors<float>&
+    CompareVectors<float>&,
+    bool
 );
 template void ANN<unsigned char>::greedySearch<CompareVectors<unsigned char>>(
     const std::vector<unsigned char>&, 
@@ -355,7 +433,8 @@ template void ANN<unsigned char>::greedySearch<CompareVectors<unsigned char>>(
     int, 
     std::set<std::vector<unsigned char>, CompareVectors<unsigned char>>&, 
     std::set<std::vector<unsigned char>, CompareVectors<unsigned char>>&, 
-    CompareVectors<unsigned char>&
+    CompareVectors<unsigned char>&,
+    bool
 );
 template void ANN<long>::greedySearch<CompareVectors<long>>(
     const std::vector<long>&, 
@@ -364,10 +443,9 @@ template void ANN<long>::greedySearch<CompareVectors<long>>(
     int, 
     std::set<std::vector<long>, CompareVectors<long>>&, 
     std::set<std::vector<long>, CompareVectors<long>>&, 
-    CompareVectors<long>&
+    CompareVectors<long>&,
+    bool
 );
-
-
 
 // Explicit instantiation for robustPrune with the different datatypes
 template void ANN<int>::robustPrune<CompareVectors<int>>(
