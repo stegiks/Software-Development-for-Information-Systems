@@ -153,30 +153,22 @@ template <typename datatype>
 template <typename Compare>
 void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::set<std::vector<datatype>, Compare>& Visited, CompareVectors<datatype>& compare, bool do_timing){
     // Error handling
+    double totalTime = 0.0;
+    auto startTotalTime = std::chrono::high_resolution_clock::now();
     if(this->checkErrorsGreedy(start, query, k, upper_limit)){
         NNS.clear();
         return;
     }
 
     // Timing variables
-    double differenceTime = 0.0;
     double updateTime = 0.0;
     int loopIterations = 0;
 
-    while(true){
-        auto startDifference = std::chrono::high_resolution_clock::now();
-        std::set<std::vector<datatype>, CompareVectors<datatype>> difference(compare);
-        std::set_difference(NNS.begin(), NNS.end(), Visited.begin(), Visited.end(),
-                    std::inserter(difference, difference.end()), compare);
+    // difference set the first time will have the start node
+    std::set<std::vector<datatype>, CompareVectors<datatype>> difference(compare);
+    difference.insert(start);
 
-        auto endDifference = std::chrono::high_resolution_clock::now();
-        if(do_timing)
-            differenceTime += std::chrono::duration_cast<std::chrono::microseconds>(endDifference - startDifference).count();
-
-        // If the difference is empty, break out of the loop
-        if(difference.empty())
-            break;
-        
+    while(!difference.empty()){
         loopIterations++;
 
         // Get the index of the closest point
@@ -188,27 +180,43 @@ void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::
 
         // Update NNS set with neighbours of closest_point
         auto startUpdate = std::chrono::high_resolution_clock::now();
-        for(const auto& neighbour : neighbours)
+        for(const auto& neighbour : neighbours){
             NNS.insert(neighbour);
+            
+            if(Visited.find(neighbour) == Visited.end())
+                difference.insert(neighbour);
+        }
 
         // Update Visited set with closest_point
         Visited.insert(closest_point);
+        difference.erase(closest_point);
+
         auto endUpdate = std::chrono::high_resolution_clock::now();
         if(do_timing)
             updateTime += std::chrono::duration_cast<std::chrono::microseconds>(endUpdate - startUpdate).count();
 
-        // Update NNS to retain upper_limit closest points
-        if(NNS.size() > static_cast<std::size_t>(upper_limit))
+        // Update NNS to retain upper_limit closest points and update difference set
+        if(NNS.size() > static_cast<std::size_t>(upper_limit)){
             this->pruneSet(NNS, upper_limit);
+
+            for(auto it =  difference.begin(); it != difference.end();){
+                if(NNS.find(*it) == NNS.end())
+                    it = difference.erase(it);
+                else
+                    it++;
+            }
+        }
     }
 
     // Return k closest points to Xq, using regular set
     this->pruneSet(NNS, k);
+    auto endTotalTime = std::chrono::high_resolution_clock::now();
+    totalTime = std::chrono::duration_cast<std::chrono::microseconds>(endTotalTime - startTotalTime).count();
 
     if(do_timing){
         std::cout << "  [greedySearch] loopIterations: " << loopIterations << std::endl;
-        std::cout << "  [greedySearch] differenceTime: " << differenceTime / 1000 << " ms" << std::endl;
         std::cout << "  [greedySearch] updateTime: " << updateTime / 1000 << " ms" << std::endl;
+        std::cout << "  [greedySearch] totalTime: " << totalTime / 1000 << " ms" << std::endl;
     }
 }
 
