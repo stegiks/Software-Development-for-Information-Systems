@@ -12,7 +12,7 @@ CC := gcc
 CXX := g++
 
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -std=c++17
+CFLAGS := -Wall -Wextra -Werror -g -O2 -std=c++17
 
 # Path to local google test libraries
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread

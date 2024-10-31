@@ -91,9 +91,6 @@ void processing(const std::string& file_path_base, const std::string& file_path_
 
     std::cout << GREEN << "Vamana algorithm executed successfully" << RESET << std::endl;
 
-    // ! just for testing
-    return;
-
     // For every query point, find the results and compare with ground truth
     int total_correct_guesses = 0;
     int total_gt_size = 0;
