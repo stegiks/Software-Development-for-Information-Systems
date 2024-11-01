@@ -100,10 +100,10 @@ void processing(const std::string& file_path_base, const std::string& file_path_
 
         CompareVectors<datatype> compare(query[i]);
         std::set<std::vector<datatype>, CompareVectors<datatype>> NNS(compare);
-        std::set<std::vector<datatype>, CompareVectors<datatype>> Visited(compare);
+        std::unordered_set<std::vector<datatype>, VectorHash<datatype>> Visited;
 
         // Call Greedy search to find the nearest neighbours
-        ann.greedySearch(ann.getMedoid(), query[i], k, L, NNS, Visited, compare, false);
+        ann.greedySearch(ann.getMedoid(), query[i], k, L, NNS, Visited, compare);
 
         // Search in the ground truth
         int correct = 0;

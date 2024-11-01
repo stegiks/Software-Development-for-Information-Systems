@@ -24,7 +24,7 @@ private:
     std::optional<std::vector<datatype>> cached_medoid;
 
     template <typename Compare>
-    void pruneSet(std::set<std::vector<datatype>, Compare>& myset, int k);
+    void pruneSet(std::set<std::vector<datatype>, Compare>& myset, std::set<std::vector<datatype>, Compare>& diff, int k);
 
     bool checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit);
     bool checkErrorsRobust(std::vector<datatype> point, const float alpha, const int degree_bound);
@@ -40,8 +40,9 @@ public:
     bool checkNeighbour(std::vector<datatype> a, std::vector<datatype> b);
     const std::vector<datatype>& getMedoid();
 
-    template<typename Compare>
-    void greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::set<std::vector<datatype>, Compare>& Visited, CompareVectors<datatype>& compare, bool do_timing);
+    template <typename Compare, typename Vechash>
+    void greedySearch(const std::vector<datatype>& start_node, const std::vector<datatype>& query_node, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::unordered_set<std::vector<datatype>, Vechash>& Visited, CompareVectors<datatype>& compare);
+
     template <typename Compare>
     void robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound);
     void Vamana(float alpha,int L,int R);
