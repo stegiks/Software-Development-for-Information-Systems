@@ -21,6 +21,7 @@ private:
 
 public:
     Graph(std::size_t n);
+    Graph(std::size_t n, size_t reg);
     Graph(std::vector<std::unordered_set<int>> edges);
 
     // Function to add and remove edges

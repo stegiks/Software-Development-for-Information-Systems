@@ -83,7 +83,7 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
-    ANN<datatype> ann(base);
+    ANN<datatype> ann(base, (size_t)R);
 
     std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
 
@@ -98,21 +98,20 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     for(std::size_t i = 0; i < query.size(); i++){
         int k = (int)gt[i].size();
 
-        CompareVectors<datatype> compare(query[i]);
-        std::set<std::vector<datatype>, CompareVectors<datatype>> NNS(compare);
-        std::set<std::vector<datatype>, CompareVectors<datatype>> Visited(compare);
+        CompareVectors<datatype> compare(ann.node_to_point_map,query[i]);
+        std::set<int, CompareVectors<datatype>> NNS(compare);
+        std::unordered_set<int> Visited;
 
         // Call Greedy search to find the nearest neighbours
-        ann.greedySearch(ann.getMedoid(), query[i], k, L, NNS, Visited, compare, false);
+        ann.greedySearch(ann.getMedoid(), k, L, NNS, Visited, compare);
 
         // Search in the ground truth
         int correct = 0;
         for(const int& index : gt[i]){
-            if(NNS.find(base[index]) != NNS.end()){
+            if(NNS.find(index) != NNS.end()){
                 correct++;
             }
         }
-
         float accuracy = (float)correct / k * 100;
         std::cout << "Query " << i << " accuracy : " << accuracy << "%" << std::endl;
 

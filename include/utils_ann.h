@@ -33,17 +33,32 @@ float calculateDistance(const std::vector<datatype>& a, const std::vector<dataty
     return std::sqrt(distance);
 }
 
-// Comparator class for comparing points based on the distance from a query point
+
+// Comparator class for comparing indices based on the distance from a query point
 template <typename datatype>
-class CompareVectors{
+class CompareVectors {
 public:
-    const std::vector<datatype>& m_compare_vector;
+    const std::vector<std::vector<datatype>>& m_node_to_point_map;  // Map from index to vector
+    const std::vector<datatype>& m_compare_vector;  // The query point to compare distances to
 
-    CompareVectors(const std::vector<datatype>& compare_vector) : m_compare_vector(compare_vector){}
+    // Constructor now takes node-to-point map and a comparison vector
+    CompareVectors(const std::vector<std::vector<datatype>>& node_to_point_map, 
+                   const std::vector<datatype>& compare_vector)
+        : m_node_to_point_map(node_to_point_map), m_compare_vector(compare_vector) {
+            if(m_node_to_point_map.empty()){
+                throw std::invalid_argument("Node to point map is empty");
+            }
+            
+            if(m_compare_vector.size() != m_node_to_point_map[0].size()){
+                throw std::invalid_argument("Query vector size does not match the data vector size");
+            }
+            
+        }
 
-    bool operator()(const std::vector<datatype>& a, const std::vector<datatype>& b) const{
-        return calculateDistance(a, m_compare_vector) < calculateDistance(b, m_compare_vector); 
+    // Operator() compares the distances of points at indices a and b to the comparison vector
+    bool operator()(int a, int b) const {
+        return calculateDistance(m_node_to_point_map[a], m_compare_vector) 
+             < calculateDistance(m_node_to_point_map[b], m_compare_vector); 
     }
 };
-
 #endif // ann_utils.h
