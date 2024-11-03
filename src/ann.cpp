@@ -4,7 +4,7 @@
 // Prune the set to retain only the k closest points
 template <typename datatype>
 template <typename Compare>
-void ANN<datatype>::pruneSet(std::set<std::vector<datatype>, Compare>& myset, std::set<std::vector<datatype>, Compare>& diff, int k){
+void ANN<datatype>::pruneSet(std::set<int, Compare>& myset, std::set<int, Compare>& diff, int k){
 
     if(myset.size() <= static_cast<std::size_t>(k))
         return;
@@ -23,15 +23,14 @@ void ANN<datatype>::pruneSet(std::set<std::vector<datatype>, Compare>& myset, st
 
 // Return the neighbors of a point
 template <typename datatype>
-void ANN<datatype>::neighbourNodes(std::vector<datatype>& point, std::vector<std::vector<datatype>>& neighbours){
+void ANN<datatype>::neighbourNodes(const int& point, std::vector<int>& neighbours){
 
     // Retrieve the node index for the point
-    int node = this->point_to_node_map[point];
-    std::unordered_set<int>& neighbour_indices = this->G->getNeighbours(node);
+    std::unordered_set<int>& neighbour_indices = this->G->getNeighbours(point);
 
     // Convert the neighbor indices back to points
     for(int index : neighbour_indices)
-        neighbours.push_back(this->node_to_point_map[index]);
+        neighbours.push_back(index);
 
 }
 
@@ -46,6 +45,19 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points){
     int node_index = 0;
 
     this->G = new Graph(points.size());  // Call the Graph constructor with number of points
+    // Populate the node_to_point_map and point_to_node_map
+    for(const auto& point : points){
+        this->node_to_point_map.push_back(point);
+        this->point_to_node_map[point] = node_index;
+        node_index++;
+    }
+}
+
+template <typename datatype>
+ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, size_t reg){
+    int node_index = 0;
+
+    this->G = new Graph(points.size(), reg);  // Call the Graph constructor with number of points
     // Populate the node_to_point_map and point_to_node_map
     for(const auto& point : points){
         this->node_to_point_map.push_back(point);
@@ -80,31 +92,22 @@ ANN<datatype>::~ANN(){
         delete this->G;
 }
 
+
 template<typename datatype>
-bool ANN<datatype>::checkErrorsGreedy(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit){
+bool ANN<datatype>::checkErrorsGreedy(const int& start, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
         std::cerr << "Error : Graph is empty" << std::endl;
         return true;
     }
 
-    if(query.size() == 0){
-        std::cerr << "Error : Query point is empty" << std::endl;
+    if(start < 0 || (size_t)start >= this->node_to_point_map.size()){
+        std::cerr << "Error : Start point is empty" << std::endl;
         return true;
     }
 
-    auto iterator = this->point_to_node_map.find(start);
-    if(iterator == this->point_to_node_map.end()){
-        std::cerr << "Error : Start node not found in the graph" << std::endl;
-        return true;
-    }
-    
+
     if(upper_limit < k){
         std::cerr << "Error : Upper limit cannot be less than k" << std::endl;
-        return true;
-    }
-
-    if(query.size() != start.size()){
-        std::cerr << "Error : Query point and start point have different dimensions" << std::endl;
         return true;
     }
 
@@ -112,23 +115,18 @@ bool ANN<datatype>::checkErrorsGreedy(const std::vector<datatype>& start, const 
 }
 
 template <typename datatype>
-bool ANN<datatype>::checkErrorsRobust(std::vector<datatype> point, const float alpha, const int degree_bound){
+bool ANN<datatype>::checkErrorsRobust(const int & point, const float alpha, const int degree_bound){
 
     if(this->node_to_point_map.empty()){
         std::cerr << "Error : Graph is empty" << std::endl;
         return true;
     }
 
-    if(point.size() == 0){
+    if(point< 0 || (size_t)point >= this->node_to_point_map.size()){
         std::cerr << "Error : Point is empty" << std::endl;
         return true;
     }
 
-    auto iterator = this->point_to_node_map.find(point);
-    if(iterator == this->point_to_node_map.end()){
-        std::cerr << "Error : Point not found in the graph" << std::endl;
-        return true;
-    }
 
     if(alpha < 1.0){
         std::cerr << "Error : Alpha cannot be less than 1" << std::endl;
@@ -150,31 +148,33 @@ bool ANN<datatype>::checkGraph(std::vector<std::unordered_set<int>> edges){
 
 // Check if a has an outgoing edge to b
 template <typename datatype>
-bool ANN<datatype>::checkNeighbour(std::vector<datatype> a, std::vector<datatype> b){
-    return this->G->isNeighbour(this->point_to_node_map[a], this->point_to_node_map[b]);
+bool ANN<datatype>::checkNeighbour(int a, int b){
+    return this->G->isNeighbour(a,b);
 }
 
 // Greedy search algorithm to find the nearest neighbours
 template <typename datatype>
-template <typename Compare, typename Vechash>
-void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::vector<datatype>& query, int k, int upper_limit, std::set<std::vector<datatype>, Compare>& NNS, std::unordered_set<std::vector<datatype>, Vechash>& Visited, CompareVectors<datatype>& compare){
+template <typename Compare>
+void ANN<datatype>::greedySearch(const int& start, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare){
     // Error handling
-    if(this->checkErrorsGreedy(start, query, k, upper_limit)){
+    if(this->checkErrorsGreedy(start, k, upper_limit)){
         NNS.clear();
         return;
     }
 
     // difference set the first time will have the start node
-    std::set<std::vector<datatype>, CompareVectors<datatype>> difference(compare);
+    std::set<int, CompareVectors<datatype>> difference(compare);
     difference.insert(start);
+
+    // Neighbour vector to use inside the loop
+    std::vector<int> neighbours;
 
     while(!difference.empty()){
 
         // Get the index of the closest point
-        std::vector<datatype> closest_point = *(difference.begin());
+        int closest_point = *(difference.begin());
  
         // Get the neighbors of the closest point
-        std::vector<std::vector<datatype>> neighbours;
         this->neighbourNodes(closest_point, neighbours);
 
         // Update NNS set with neighbours of closest_point
@@ -184,6 +184,8 @@ void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::
             if(Visited.find(neighbour) == Visited.end())
                 difference.insert(neighbour);
         }
+
+        neighbours.clear();
 
         // Update Visited set with closest_point
         Visited.insert(closest_point);
@@ -201,13 +203,13 @@ void ANN<datatype>::greedySearch(const std::vector<datatype>& start, const std::
 
 template <typename datatype>
 template <typename Compare>
-void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vector<datatype>, Compare>& candidate_set, const float alpha, const int degree_bound){
+void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound){
     
     // Error handling
     if(this->checkErrorsRobust(point, alpha, degree_bound))
         return;
     
-    std::vector<std::vector<datatype>> neighbours;
+    std::vector<int> neighbours;
     this->neighbourNodes(point, neighbours);
 
     for(const auto& neighbour : neighbours){
@@ -216,30 +218,35 @@ void ANN<datatype>::robustPrune(std::vector<datatype> point, std::set<std::vecto
 
     // Remove point p from candidate_set and prune all its neighbours
     candidate_set.erase(point);
-    this->G->removeNeighbours(this->point_to_node_map[point]);
+    this->G->removeNeighbours(point);
 
     while(true){
 
         if(candidate_set.size() == 0)
             break;
 
-        std::vector<datatype> closest_point = *(candidate_set.begin());
+        int closest_point = *(candidate_set.begin());
 
         // Closest point would have been removed from candidate set in alpha comparison step anyway
         candidate_set.erase(closest_point);
-        this->G->addEdge(this->point_to_node_map[point], this->point_to_node_map[closest_point]);
+        this->G->addEdge(point, closest_point);
 
-        if(this->G->countNeighbours(this->point_to_node_map[point]) == degree_bound)
+        if(this->G->countNeighbours(point) == degree_bound)
             break;
 
         for(auto it = candidate_set.begin(); it != candidate_set.end();){
             const auto& element = *it;
 
-            // printf("Comparing %f and %f\nPoints: closest_point %d, element %d, point %d\n", alpha * float(calculateDistance(closest_point, element)), float(calculateDistance(element, point)),this->point_to_node_map[closest_point],this->point_to_node_map[element],this->point_to_node_map[point]);
-            if(alpha * float(calculateDistance(closest_point, element)) <= float(calculateDistance(element, point)))
+            auto x = this->node_to_point_map[closest_point];
+            auto y = this->node_to_point_map[element];
+            auto z = this->node_to_point_map[point];
+
+            if(alpha * float(calculateDistance(x, y)) <= float(calculateDistance(y, z))){
                 it = candidate_set.erase(it);
-            else
-                it++;  // Only advance iterator if no deletion
+            }
+            else{
+                it++;
+            }
         }
     }
 }
@@ -267,11 +274,11 @@ void ANN<datatype>::calculateMedoid(){
     // Find the point with the minimum sum of distances
     auto min_iterator = std::min_element(sum_distances.begin(), sum_distances.end());
     std::size_t index_min = std::distance(sum_distances.begin(), min_iterator);
-    this->cached_medoid = this->node_to_point_map[index_min];
+    this->cached_medoid = index_min;
 }
 
 template <typename datatype>
-const std::vector<datatype>& ANN<datatype>::getMedoid(){
+const int& ANN<datatype>::getMedoid(){
     if(!this->cached_medoid.has_value())
         this->calculateMedoid();
 
@@ -300,29 +307,32 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
     unsigned seed = 0;
     std::shuffle(perm.begin(), perm.end(), std::default_random_engine(seed));
 
+    // Neighbours vectors to use inside the loop
+    std::vector<int> neighbours;
+    std::vector<int> neighbours_j;
+
     for(size_t i = 0; i < this->node_to_point_map.size(); i++){
-        int p = perm[i];
+        int point = perm[i];
 
         // Get the point corresponding to the node
         // Create the NNS and Visited sets and pass them as references
-        std::vector<datatype> point = this->node_to_point_map[p];
-        CompareVectors<datatype> compare(point);
-        std::set<std::vector<datatype>, CompareVectors<datatype>> NNS(compare);
-        std::unordered_set<std::vector<datatype>, VectorHash<datatype>> Visited;
+
+        CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+        std::set<int, CompareVectors<datatype>> NNS(compare);
+        std::unordered_set<int> Visited;
         NNS.insert(this->cached_medoid.value());
         
         // Return k closest points to Xq (point) and then with robust find "better" neighbours
-        this->greedySearch(this->cached_medoid.value(), point, 1, L, NNS, Visited, compare);
+        this->greedySearch(this->cached_medoid.value(), 1, L, NNS, Visited, compare);
 
         // Transform Visited to a set with a custom comparator
-        std::set<std::vector<datatype>, CompareVectors<datatype>> VisitedRobust(compare);
+        std::set<int, CompareVectors<datatype>> VisitedRobust(compare);
         for(auto it = Visited.begin(); it != Visited.end(); it++){
             VisitedRobust.insert(*it);
         }
 
         this->robustPrune(point, VisitedRobust, alpha, R);
 
-        std::vector<std::vector<datatype>> neighbours;
         this->neighbourNodes(point, neighbours);
 
         for(auto j : neighbours){
@@ -330,25 +340,28 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
             // If j hasn't an outgoing edge to point, then offset is 1
             int offset = this->checkNeighbour(j,point) ? 0 : 1;
             // int offset = 0;
-            if((this->G->countNeighbours(this->point_to_node_map[j]) + offset) > R){
-                std::set<std::vector<datatype>, CompareVectors<datatype>> temp(compare);
+            if((this->G->countNeighbours(j) + offset) > R){
+                std::set<int, CompareVectors<datatype>> temp(compare);
                 
-                std::vector<std::vector<datatype>> neighbours_j;
                 this->neighbourNodes(j, neighbours_j);
                 neighbours_j.push_back(point);
 
                 for(auto k : neighbours_j){
                     temp.insert(k);
                 }
+
+                neighbours_j.clear();
                 
                 // Call robust for j neighbours
                 this->robustPrune(j, temp, alpha, R);
             }
             else{
                 // Make an edge between j and point too
-                this->G->addEdge(this->point_to_node_map[j], p);
+                this->G->addEdge(j, point);
             }
         }
+
+        neighbours.clear();
     }
 }
 
@@ -359,65 +372,67 @@ template class ANN<long>;
 template class ANN<unsigned char>;
 
 // Explicit instantiation for greedySearch with the different datatypes
-template void ANN<int>::greedySearch<CompareVectors<int>, VectorHash<int>>(
-    const std::vector<int>&, 
-    const std::vector<int>&, 
+template void ANN<int>::greedySearch<CompareVectors<int>>(
+    const int&, 
     int, 
     int, 
-    std::set<std::vector<int>, CompareVectors<int>>&, 
-    std::unordered_set<std::vector<int>, VectorHash<int>>&, 
+    std::set<int, CompareVectors<int>>&, 
+    std::unordered_set<int>&, 
     CompareVectors<int>&
 );
-template void ANN<float>::greedySearch<CompareVectors<float>, VectorHash<float>>(
-    const std::vector<float>&, 
-    const std::vector<float>&, 
+
+template void ANN<float>::greedySearch<CompareVectors<float>>(
+    const int&, 
     int, 
     int, 
-    std::set<std::vector<float>, CompareVectors<float>>&, 
-    std::unordered_set<std::vector<float>, VectorHash<float>>&, 
+    std::set<int, CompareVectors<float>>&, 
+    std::unordered_set<int>&, 
     CompareVectors<float>&
 );
-template void ANN<unsigned char>::greedySearch<CompareVectors<unsigned char>, VectorHash<unsigned char>>(
-    const std::vector<unsigned char>&, 
-    const std::vector<unsigned char>&, 
+
+template void ANN<unsigned char>::greedySearch<CompareVectors<unsigned char>>(
+    const int&, 
     int, 
     int, 
-    std::set<std::vector<unsigned char>, CompareVectors<unsigned char>>&, 
-    std::unordered_set<std::vector<unsigned char>, VectorHash<unsigned char>>&, 
+    std::set<int, CompareVectors<unsigned char>>&, 
+    std::unordered_set<int>&, 
     CompareVectors<unsigned char>&
 );
-template void ANN<long>::greedySearch<CompareVectors<long>, VectorHash<long>>(
-    const std::vector<long>&, 
-    const std::vector<long>&, 
+
+template void ANN<long>::greedySearch<CompareVectors<long>>(
+    const int&, 
     int, 
     int, 
-    std::set<std::vector<long>, CompareVectors<long>>&, 
-    std::unordered_set<std::vector<long>, VectorHash<long>>&, 
+    std::set<int, CompareVectors<long>>&, 
+    std::unordered_set<int>&, 
     CompareVectors<long>&
 );
 
 // Explicit instantiation for robustPrune with the different datatypes
 template void ANN<int>::robustPrune<CompareVectors<int>>(
-    std::vector<int>, 
-    std::set<std::vector<int>, CompareVectors<int>>&, 
-    float, 
-    int
+    const int&, 
+    std::set<int, CompareVectors<int>>&, 
+    const float, 
+    const int
 );
+
 template void ANN<float>::robustPrune<CompareVectors<float>>(
-    std::vector<float>, 
-    std::set<std::vector<float>, CompareVectors<float>>&, 
-    float, 
-    int
+    const int&, 
+    std::set<int, CompareVectors<float>>&, 
+    const float, 
+    const int
 );
+
 template void ANN<unsigned char>::robustPrune<CompareVectors<unsigned char>>(
-    std::vector<unsigned char>, 
-    std::set<std::vector<unsigned char>, CompareVectors<unsigned char>>&, 
-    float, 
-    int
+    const int&, 
+    std::set<int, CompareVectors<unsigned char>>&, 
+    const float, 
+    const int
 );
+
 template void ANN<long>::robustPrune<CompareVectors<long>>(
-    std::vector<long>, 
-    std::set<std::vector<long>, CompareVectors<long>>&, 
-    float, 
-    int
+    const int&, 
+    std::set<int, CompareVectors<long>>&, 
+    const float, 
+    const int
 );

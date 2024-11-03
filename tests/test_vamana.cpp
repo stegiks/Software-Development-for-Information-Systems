@@ -1,20 +1,10 @@
 #include <gtest/gtest.h>
 #include "ann.h"
-
-class ANNTest : public ::testing::Test {
-protected:
-    ANN<int> ann;
-
-    ANNTest() : ann({{1, 1, 1}, {2, 2, 5}, {2, 4, 5}, {7, 8, 9}}) {}
-
-    std::vector<int> getMedoidWrapper() {
-        return ann.getMedoid();
-    }
-};
-
-TEST_F(ANNTest, TestGetMedoid) {
-    std::vector<int> expected_medoid = {2, 4, 5};
-    EXPECT_EQ(getMedoidWrapper(), expected_medoid);
+TEST(ANNTest, TestGetMedoid){
+    std::vector<std::vector<int>> points = {{1, 1, 1}, {2, 2, 5}, {2, 4, 5}, {7, 8, 9}};
+    ANN<int> ann(points);
+    int expected_medoid = 2;
+    EXPECT_EQ(ann.getMedoid(), expected_medoid);
 }
 
 // Degree Bound Check
