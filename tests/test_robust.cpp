@@ -84,10 +84,9 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
     candidate.insert(1);
     candidate.insert(3);
 
-
     ANN<int> ann_alt(points_alt, edges_alt);
-    ann_alt.robustPrune(start_alt, candidate, 1.1, 5);
 
+    EXPECT_THROW(ann_alt.robustPrune(start_alt, candidate, 1.1, 5), std::invalid_argument);
     EXPECT_TRUE(ann_alt.checkGraph(edges_alt));
 
     // Point not in graph
@@ -104,8 +103,8 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
     ANN<int> ann_alt2(points_alt, edges_alt);
     start_alt = (int)points_alt.size();
     start_alt++;
-    ann_alt2.robustPrune(start_alt, candidate, 1.1, 5);
 
+    EXPECT_THROW(ann_alt2.robustPrune(start_alt, candidate, 1.1, 5), std::invalid_argument);
     EXPECT_TRUE(ann_alt2.checkGraph(edges_alt));
 }
 
@@ -119,11 +118,11 @@ TEST_F(RobustPruneTest, InvalidAlphaDegree){
     candidate.insert(3);
 
     // Alpha less than 1
-    ann->robustPrune(0, candidate, 0.9, 5);
+    EXPECT_THROW(ann->robustPrune(0, candidate, 0.9, 5), std::invalid_argument);
     EXPECT_TRUE(ann->checkGraph(edges));
 
     // Degree bound negative
-    ann->robustPrune(0, candidate, 1.1, -5);
+    EXPECT_THROW(ann->robustPrune(0, candidate, 1.1, -5), std::invalid_argument);
     EXPECT_TRUE(ann->checkGraph(edges));
 }
 

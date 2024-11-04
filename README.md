@@ -51,6 +51,8 @@ The provided Makefile includes several commands to build and run the project:
 
 > <b>NOTE</b> : The Makefile rule ```run``` will work only if you have first downloaded the dataset using the ```./setup_datasets.sh``` script provided. If you have not downloaded the dataset, you have to run the executable manually or change <b>```ARGS```</b> variable in the Makefile, with the desired parameters.
 
+> <b>NOTE</b> : If you want to run the project manually, you can use the following command after compiling it : ```./bin/main file_path_base file_path_query extension file_path_gt alpha Regularity L(upper limit)```
+
 <h2>Modules Description</h2>
 
 <h3>ANN (Approximate Nearest Neighbors)</h3>

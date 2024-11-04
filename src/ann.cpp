@@ -96,18 +96,21 @@ ANN<datatype>::~ANN(){
 template<typename datatype>
 bool ANN<datatype>::checkErrorsGreedy(const int& start, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
-        std::cerr << "Error : Graph is empty" << std::endl;
+        std::cerr << RED << "Error : Graph is empty" << RESET << std::endl;
+        throw std::invalid_argument("greedySearch: Graph is empty");
         return true;
     }
 
     if(start < 0 || (size_t)start >= this->node_to_point_map.size()){
-        std::cerr << "Error : Start point is empty" << std::endl;
+        std::cerr << RED << "Error : Start point is empty" << RESET << std::endl;
+        throw std::invalid_argument("greedySearch: Start point is empty");
         return true;
     }
 
 
     if(upper_limit < k){
-        std::cerr << "Error : Upper limit cannot be less than k" << std::endl;
+        std::cerr << RED << "Error : Upper limit cannot be less than k" << RESET << std::endl;
+        throw std::invalid_argument("greedySearch: Upper limit cannot be less than k");
         return true;
     }
 
@@ -118,23 +121,27 @@ template <typename datatype>
 bool ANN<datatype>::checkErrorsRobust(const int & point, const float alpha, const int degree_bound){
 
     if(this->node_to_point_map.empty()){
-        std::cerr << "Error : Graph is empty" << std::endl;
+        std::cerr << RED << "Error : Graph is empty" << RESET << std::endl;
+        throw std::invalid_argument("robustPrune: Graph is empty");
         return true;
     }
 
     if(point< 0 || (size_t)point >= this->node_to_point_map.size()){
-        std::cerr << "Error : Point is empty" << std::endl;
+        std::cerr << RED << "Error : Point is empty" << RESET << std::endl;
+        throw std::invalid_argument("robustPrune: Point is empty");
         return true;
     }
 
 
     if(alpha < 1.0){
-        std::cerr << "Error : Alpha cannot be less than 1" << std::endl;
+        std::cerr << RED << "Error : Alpha cannot be less than 1" << RESET << std::endl;
+        throw std::invalid_argument("robustPrune: Alpha cannot be less than 1");
         return true;
     }
 
     if(degree_bound < 0){
-        std::cerr << "Error : Degree bound cannot be negative" << std::endl;
+        std::cerr << RED << "Error : Degree bound cannot be negative" << RESET << std::endl;
+        throw std::invalid_argument("robustPrune: Degree bound cannot be negative");
         return true;
     }
 
@@ -255,7 +262,8 @@ template <typename datatype>
 void ANN<datatype>::calculateMedoid(){
     std::size_t n = this->node_to_point_map.size();
     if(n == 0){
-        std::cerr << "Error : No points in the dataset" << std::endl;
+        std::cerr << RED << "Error : No points in the dataset" << RESET << std::endl;
+        throw std::invalid_argument("calculateMedoid: No points in the dataset");
         return;
     }
 
@@ -368,7 +376,6 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 // Explicit instantiation of ANN class for datatype int, float and unsigned char
 template class ANN<int>;
 template class ANN<float>;
-template class ANN<long>;
 template class ANN<unsigned char>;
 
 // Explicit instantiation for greedySearch with the different datatypes
@@ -380,7 +387,6 @@ template void ANN<int>::greedySearch<CompareVectors<int>>(
     std::unordered_set<int>&, 
     CompareVectors<int>&
 );
-
 template void ANN<float>::greedySearch<CompareVectors<float>>(
     const int&, 
     int, 
@@ -389,7 +395,6 @@ template void ANN<float>::greedySearch<CompareVectors<float>>(
     std::unordered_set<int>&, 
     CompareVectors<float>&
 );
-
 template void ANN<unsigned char>::greedySearch<CompareVectors<unsigned char>>(
     const int&, 
     int, 
@@ -397,15 +402,6 @@ template void ANN<unsigned char>::greedySearch<CompareVectors<unsigned char>>(
     std::set<int, CompareVectors<unsigned char>>&, 
     std::unordered_set<int>&, 
     CompareVectors<unsigned char>&
-);
-
-template void ANN<long>::greedySearch<CompareVectors<long>>(
-    const int&, 
-    int, 
-    int, 
-    std::set<int, CompareVectors<long>>&, 
-    std::unordered_set<int>&, 
-    CompareVectors<long>&
 );
 
 // Explicit instantiation for robustPrune with the different datatypes
@@ -426,13 +422,6 @@ template void ANN<float>::robustPrune<CompareVectors<float>>(
 template void ANN<unsigned char>::robustPrune<CompareVectors<unsigned char>>(
     const int&, 
     std::set<int, CompareVectors<unsigned char>>&, 
-    const float, 
-    const int
-);
-
-template void ANN<long>::robustPrune<CompareVectors<long>>(
-    const int&, 
-    std::set<int, CompareVectors<long>>&, 
     const float, 
     const int
 );

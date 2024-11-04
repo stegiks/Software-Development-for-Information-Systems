@@ -17,23 +17,27 @@ bool validateExtension(const std::string& file_path_base, const std::string& fil
     
     if(extension_base != extension_query){
         std::cerr << RED << "Error : Base and query files have different extensions" << RESET << std::endl;
+        throw std::invalid_argument("Base and query files have different extensions");
         return false;
     }
 
     if(extension_base != "ivecs" && extension_base != "fvecs" && extension_base != "bvecs"){
         std::cerr << RED << "Error : Base and Query files have an invalid extension" << RESET << std::endl;
         std::cerr << BLUE << "Valid extensions are : ivecs, fvecs, bvecs" << RESET << std::endl;
+        throw std::invalid_argument("Base and Query files have an invalid extension");
         return false;
     }
 
     if(file_format != extension_base){
         std::cerr << RED << "Error : File format and extension base are not the same" << RESET << std::endl;
+        throw std::invalid_argument("File format and extension base are not the same");
         return false;
     }
 
     if(extension_gt != "ivecs"){
         std::cerr << RED << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
         std::cerr << BLUE << "Valid extension is : ivecs" << RESET << std::endl;
+        throw std::invalid_argument("Ground truth file has an invalid extension");
         return false;
     }
 
@@ -46,7 +50,7 @@ std::vector<std::vector<datatype>> parseVecs(const std::string& file_path){
     std::ifstream file(file_path, std::ios::binary);
 
     if(!file.is_open()){
-        std::runtime_error("Could not open file " + file_path);
+        throw std::runtime_error("Could not open file " + file_path);
     }
 
     std::vector<std::vector<datatype>> vec;
@@ -61,7 +65,7 @@ std::vector<std::vector<datatype>> parseVecs(const std::string& file_path){
         std::vector<datatype> vec_temp(dim);
         file.read((char*)vec_temp.data(), dim * sizeof(datatype));
         if(!file){
-            std::runtime_error("Error reading vector");
+            throw std::runtime_error("Error reading vector");
         }
 
         // Using std::move to avoid copying the vector 
@@ -80,6 +84,11 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
     std::vector<std::vector<int>> gt = parseVecs<int>(file_path_gt);
 
+    // Check if the files are parsed successfully
+    if(base.empty() || query.empty() || gt.empty()){
+        throw std::runtime_error("Parsing failed and returned empty vectors");
+    }
+
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
@@ -89,7 +98,7 @@ void processing(const std::string& file_path_base, const std::string& file_path_
 
     ann.Vamana(alpha, L, R);
 
-    std::cout << GREEN << "Vamana algorithm executed successfully" << RESET << std::endl;
+    std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
 
     // For every query point, find the results and compare with ground truth
     int total_correct_guesses = 0;
@@ -112,15 +121,15 @@ void processing(const std::string& file_path_base, const std::string& file_path_
                 correct++;
             }
         }
-        float accuracy = (float)correct / k * 100;
-        std::cout << "Query " << i << " accuracy : " << accuracy << "%" << std::endl;
+        float recall = (float)correct / k * 100;
+        std::cout << "Query " << i << " recall : " << recall << "%" << std::endl;
 
         total_correct_guesses += correct;
         total_gt_size += k; 
     }
 
-    float total_accuracy = (float)total_correct_guesses / total_gt_size * 100;
-    std::cout << "Total accuracy : " << total_accuracy << "%" << std::endl;
+    float total_recall = (float)total_correct_guesses / total_gt_size * 100;
+    std::cout << "Total recall : " << total_recall << "%" << std::endl;
 }
 
 // Explicit instantiation of the parseVecs function

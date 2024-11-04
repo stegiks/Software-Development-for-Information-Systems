@@ -159,7 +159,7 @@ TEST(GreedySearch, EmptyGraph){
     ANN<int> ann(points, edges);
     std::vector<int> query_node = {6, 6, 6};
     
-    EXPECT_THROW(CompareVectors<int> compare(ann.node_to_point_map,query_node),std::invalid_argument); 
+    EXPECT_THROW(CompareVectors<int> compare(ann.node_to_point_map,query_node), std::invalid_argument); 
 }
 
 // Different k values
@@ -186,7 +186,6 @@ TEST(GreedySearch, KDifferentValues){
     expected.insert(1);
     EXPECT_EQ(NNS, expected);
 
-
     NNS.clear();
     Visited.clear();
     NNS.insert(start_node);
@@ -204,8 +203,8 @@ TEST(GreedySearch, KDifferentValues){
     // Test upper limit less than k
     upper_limit = 1;
     k = 2;
-    ann.greedySearch(start_node, k,upper_limit, NNS, Visited, compare);
-    EXPECT_TRUE(NNS.empty());
+    EXPECT_THROW(ann.greedySearch(start_node, k,upper_limit, NNS, Visited, compare), std::invalid_argument);
+    EXPECT_TRUE(NNS.size() == 1);   // Only the start node
 }
 
 // Test for unsigned char datatype
