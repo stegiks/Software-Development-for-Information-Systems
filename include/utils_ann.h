@@ -36,7 +36,7 @@ float calculateDistance(const std::vector<datatype>& a, const std::vector<dataty
 
 // Comparator class for comparing indices based on the distance from a query point
 template <typename datatype>
-class CompareVectors {
+class CompareVectors{
 public:
     const std::vector<std::vector<datatype>>& m_node_to_point_map;  // Map from index to vector
     const std::vector<datatype>& m_compare_vector;  // The query point to compare distances to
