@@ -26,11 +26,16 @@ struct VectorHash{
 // Utility function to calculate the Euclidean distance between two vectors
 template <typename datatype>
 float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b){
-    float distance = .0;
+    double distance = .0;
+    float max_float = std::numeric_limits<float>::max();
+
     for(std::size_t i = 0; i < a.size(); i++){
         distance += (a[i] - b[i]) * (a[i] - b[i]);
+        if(distance > max_float){
+            return max_float;
+        }
     }
-    return std::sqrt(distance);
+    return (float)std::sqrt(distance);
 }
 
 
