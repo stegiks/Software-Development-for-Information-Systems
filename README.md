@@ -2,8 +2,8 @@
 
 <h2> Team members </h2>
 
-- ***Stefanos Gkikas***  : sdi2100025
-- ***Theodoris Mallios*** : sdi2100090
+- ***Stefanos Gkikas***  : sdi2100025@di.uoa.gr , 1115202100025
+- ***Theodoris Mallios*** : sdi2100090@di.uoa.gr , 1115202100090
 
 
 <h2> Setting Up </h2>
