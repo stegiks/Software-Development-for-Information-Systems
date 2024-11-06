@@ -20,13 +20,14 @@ TEST(UtilsANN, BasicHashFunctionality){
 TEST(UtilsANN, DistanceTest){
     std::vector<float> v1 = {3.0, 4.0};
     std::vector<float> v2 = {6.0, 8.0};
+    std::size_t dim = v1.size();
 
     // Test known distance
-    EXPECT_FLOAT_EQ(calculateDistance(v1, v2), 5.0);
+    EXPECT_FLOAT_EQ(calculateDistance(v1, v2, dim), 25.0);
 
     // Test zero distance
     std::vector<float> v3 = {3.0, 4.0};
-    EXPECT_FLOAT_EQ(calculateDistance(v1, v3), 0.0);
+    EXPECT_FLOAT_EQ(calculateDistance(v1, v3, dim), 0.0);
 }
 
 TEST(UtilsANN, VectorComparison){

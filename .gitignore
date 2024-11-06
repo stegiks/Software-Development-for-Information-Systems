@@ -1,19 +1,13 @@
-## Ignore specific folders
-.vscode
-build
-bin
-datasets
-googletest
-sift*
+## Ignore everything
+*
 
-## Ignore files in the root of the repository
-.vsls.json
-*.txt
-*.out
-*.exe
-*.o
-*.a
-*.so
-*.dll
-*.lib
-*.data
+## But not these files and folders
+!.gitignore
+!setup.sh
+!setup_datasets.sh
+!Makefile
+!README.md
+!.github/
+!src/
+!include/
+!tests

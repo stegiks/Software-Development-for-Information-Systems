@@ -247,8 +247,9 @@ void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candid
             auto x = this->node_to_point_map[closest_point];
             auto y = this->node_to_point_map[element];
             auto z = this->node_to_point_map[point];
+            std::size_t dim = y.size();
 
-            if(alpha * float(calculateDistance(x, y)) <= float(calculateDistance(y, z))){
+            if(alpha * float(calculateDistance(x, y, dim)) <= float(calculateDistance(y, z, dim))){
                 it = candidate_set.erase(it);
             }
             else{
@@ -270,10 +271,16 @@ void ANN<datatype>::calculateMedoid(){
     // Hold the sum of distances for each point
     std::vector<float> sum_distances(n, 0.0);
 
+    std::size_t dim = 0;
+    if(this->node_to_point_map.size() > 0)
+        dim = this->node_to_point_map[0].size();
+    else
+        throw std::invalid_argument("calculateMedoid: No points in the dataset");
+
     // Calculate one time the distance between each pair of points to save time
     for(std::size_t i = 0; i < n; i++){
         for(std::size_t j = i + 1; j < n; j++){
-            float distance = calculateDistance(this->node_to_point_map[i], this->node_to_point_map[j]);
+            float distance = calculateDistance(this->node_to_point_map[i], this->node_to_point_map[j], dim);
             sum_distances[i] += distance;
             sum_distances[j] += distance;
         }

@@ -23,19 +23,20 @@ struct VectorHash{
     }
 };
 
-// Utility function to calculate the Euclidean distance between two vectors
+// Utility function to calculate the squared Euclidean distance between two vectors
 template <typename datatype>
-float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b){
-    double distance = .0;
-    float max_float = std::numeric_limits<float>::max();
+inline float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b, std::size_t dim){
+    double distance = 0.0;
+    // float max_float = std::numeric_limits<float>::max();
 
-    for(std::size_t i = 0; i < a.size(); i++){
-        distance += (a[i] - b[i]) * (a[i] - b[i]);
-        if(distance > max_float){
-            return max_float;
-        }
+    for(std::size_t i = 0; i < dim; i++){
+        double diff = a[i] - b[i];
+        distance += diff * diff;
+        // if(distance > max_float){
+        //     return max_float;
+        // }
     }
-    return (float)std::sqrt(distance);
+    return (float)(distance);
 }
 
 
@@ -45,11 +46,12 @@ class CompareVectors{
 public:
     const std::vector<std::vector<datatype>>& m_node_to_point_map;  // Map from index to vector
     const std::vector<datatype>& m_compare_vector;  // The query point to compare distances to
+    std::size_t dimension;
 
     // Constructor now takes node-to-point map and a comparison vector
     CompareVectors(const std::vector<std::vector<datatype>>& node_to_point_map, 
                    const std::vector<datatype>& compare_vector)
-        : m_node_to_point_map(node_to_point_map), m_compare_vector(compare_vector) {
+        : m_node_to_point_map(node_to_point_map), m_compare_vector(compare_vector), dimension(compare_vector.size()){
             if(m_node_to_point_map.empty()){
                 throw std::invalid_argument("Node to point map is empty");
             }
@@ -62,8 +64,8 @@ public:
 
     // Operator() compares the distances of points at indices a and b to the comparison vector
     bool operator()(int a, int b) const {
-        return calculateDistance(m_node_to_point_map[a], m_compare_vector) 
-             < calculateDistance(m_node_to_point_map[b], m_compare_vector); 
+        return calculateDistance(m_node_to_point_map[a], m_compare_vector, dimension) 
+             < calculateDistance(m_node_to_point_map[b], m_compare_vector, dimension); 
     }
 };
 #endif // ann_utils.h
