@@ -18,7 +18,7 @@ CFLAGS := -Wall -Wextra -Werror -g -O2 -std=c++17
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
 
 # Arguments
-ARGS := 
+ARGS := ./siftsmall/siftsmall_base.fvecs ./siftsmall/siftsmall_query.fvecs fvecs ./siftsmall/siftsmall_groundtruth.ivecs 1 50 150
 
 # Targets
 SRC_FILES := $(wildcard $(SRC)/*.cpp)
@@ -54,7 +54,7 @@ run: $(BIN)/main
 
 # Clean
 clean:
-	rm -rf $(BUILD)/* $(BIN)/*
+	rm -rf $(BUILD)/* $(BIN)/* *.txt *.out
 
 # Valgrind
 valgrind: $(BIN)/main

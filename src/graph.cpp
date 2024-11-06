@@ -8,11 +8,34 @@ Graph::Graph(std::size_t n){
     for(std::size_t i = 0; i < n; i++){
         for(std::size_t j = 0; j < n; j++){
             if(rand() % 2 == 1 && i != j){
-                this->addEdge(i, j);
+                this->adj_list.at(i).insert(j);
             }
         }
     }
     
+}
+
+
+Graph::Graph(std::size_t n,size_t reg){
+    // Randomly generate a graph with n nodes
+    srand(time(NULL));
+    this->adj_list = std::vector<std::unordered_set<int>>(n);
+    this->num_nodes = n;
+
+    std::vector<int> permutation;
+
+    for(size_t i=0;i<n;i++){
+        permutation.push_back(i);
+    }
+
+    for(std::size_t i = 0; i < n; i++){
+        std::shuffle(permutation.begin(), permutation.end(), std::default_random_engine(i));
+        for(std::size_t j = 0; j < reg; j++){
+            if(i != j){
+                this->adj_list.at(i).insert(permutation.at(j));
+            }
+        }
+    }
 }
 
 Graph::Graph(std::vector<std::unordered_set<int>> edges){

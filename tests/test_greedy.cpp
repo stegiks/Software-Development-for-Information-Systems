@@ -21,15 +21,15 @@ TEST(GreedySearch, BasicTests){
     int upper_limit = 3;
 
     // Init the sets
-    CompareVectors<int> compare(query_node);
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
-    NNS.insert(start_node);
+    CompareVectors<int> compare(ann.node_to_point_map,query_node);
+    std::set<int, CompareVectors<int>> NNS(compare);
+    std::unordered_set<int> Visited;
+    NNS.insert(0);
 
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    std::set<std::vector<int>, CompareVectors<int>> expected(compare);
-    expected.insert({4, 5, 6});
-    expected.insert({7, 8, 9});
+    ann.greedySearch(0, k, upper_limit, NNS, Visited, compare);
+    std::set<int, CompareVectors<int>> expected(compare);
+    expected.insert(1);
+    expected.insert(2);
     EXPECT_EQ(NNS, expected);
 
     // Diffrent graph may result in different nearest neighbours
@@ -45,12 +45,12 @@ TEST(GreedySearch, BasicTests){
     ANN<int> ann2(points, edges);
     NNS.clear();
     Visited.clear();
-    NNS.insert(start_node);
-    ann2.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
+    NNS.insert(0);
+    ann2.greedySearch(0, k, upper_limit, NNS, Visited, compare);
 
     expected.clear();
-    expected.insert({1, 2, 3});
-    expected.insert({10, 11, 12});
+    expected.insert(0);
+    expected.insert(3);
     EXPECT_EQ(NNS, expected);
 }
 
@@ -66,19 +66,8 @@ TEST(GreedySearch, EmptyQuery){
         {3, 4}
     };
 
-    ANN<int> ann(points, edges);
-    std::vector<int> start_node = {1, 2, 3};
-    int k = 2;
-    int upper_limit = 3;
-    CompareVectors<int> compare({});
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
-    NNS.insert(start_node);
-
-    ann.greedySearch(start_node, {}, k, upper_limit, NNS, Visited, compare);
-
-    
-    EXPECT_TRUE(NNS.empty());
+    ANN<int> ann(points, edges);    
+    EXPECT_THROW(CompareVectors<int> compare(ann.node_to_point_map,{}),std::invalid_argument);
 }
 
 // Test Dimension mismatch
@@ -95,17 +84,8 @@ TEST(GreedySearch, DimensionMismatch){
 
     // Fixed graph initialization
     ANN<int> ann(points, edges);
-    std::vector<int> start_node = {1, 2, 3};
     std::vector<int> query_node = {1,2,3,4};
-    CompareVectors<int> compare(query_node);
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
-    NNS.insert(start_node);
-    int k = 2;
-    int upper_limit = 3;
-
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    EXPECT_TRUE(NNS.empty());
+    EXPECT_THROW(CompareVectors<int> compare(ann.node_to_point_map,query_node),std::invalid_argument);
 }
 
 //Test for query point being a base vector
@@ -121,15 +101,15 @@ TEST(GreedySearch, BaseVector){
     };
 
     ANN<int> ann(points, edges);
-    std::vector<int> start_node = {1, 2, 3};
-    CompareVectors<int> compare(start_node);
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
+    int start_node = 0;
+    CompareVectors<int> compare(ann.node_to_point_map,points[0]);
+    std::set<int, CompareVectors<int>> NNS(compare);
+    std::unordered_set<int> Visited;
     NNS.insert(start_node);
     int k = 1;
     int upper_limit = 1;
-    ann.greedySearch(start_node, start_node, k, upper_limit, NNS, Visited, compare);
-    std::set<std::vector<int>, CompareVectors<int>> expected(compare);
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
+    std::set<int, CompareVectors<int>> expected(compare);
     expected.insert(start_node);
     EXPECT_EQ(NNS, expected);
 
@@ -142,9 +122,9 @@ TEST(GreedySearch, BaseVector){
 
     k = 2;
     upper_limit = 2;
-    ann.greedySearch(start_node, start_node, k, upper_limit, NNS, Visited, compare);
-    expected.insert({1, 2, 3});
-    expected.insert({4, 5, 6});
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
+    expected.insert(0);
+    expected.insert(1);
     EXPECT_EQ(NNS, expected);
 }
 
@@ -155,19 +135,19 @@ TEST(GreedySearch, OnePoint){
     std::vector<std::unordered_set<int>> edges = {{}};
 
     ANN<int> ann(points, edges);
-    std::vector<int> start_node = {1, 2, 3};
+    int start_node = 0;
     std::vector<int> query_node = {6, 6, 6};
 
-    CompareVectors<int> compare(query_node);
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
+    CompareVectors<int> compare(ann.node_to_point_map,query_node);
+    std::set<int, CompareVectors<int>> NNS(compare);
+    std::unordered_set<int> Visited;
     NNS.insert(start_node);
     int k = 1;
     int upper_limit = 1;
 
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    std::set<std::vector<int>, CompareVectors<int>> expected(compare);
-    expected.insert({1, 2, 3});
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
+    std::set<int, CompareVectors<int>> expected(compare);
+    expected.insert(0);
     EXPECT_EQ(NNS, expected);
 } 
 
@@ -177,18 +157,9 @@ TEST(GreedySearch, EmptyGraph){
     std::vector<std::unordered_set<int>> edges = {};
 
     ANN<int> ann(points, edges);
-    std::vector<int> start_node = {1, 2, 3};
     std::vector<int> query_node = {6, 6, 6};
     
-    CompareVectors<int> compare(query_node);
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
-    NNS.insert(start_node);
-    int k = 2;
-    int upper_limit = 3;
-
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    EXPECT_TRUE(NNS.empty());
+    EXPECT_THROW(CompareVectors<int> compare(ann.node_to_point_map,query_node), std::invalid_argument); 
 }
 
 // Different k values
@@ -197,24 +168,23 @@ TEST(GreedySearch, KDifferentValues){
     std::vector<std::unordered_set<int>> edges = {{1}, {0}};
 
     ANN<int> ann(points, edges);
-    std::vector<int> start_node = {1, 2, 3};
+    int start_node = 0;
     std::vector<int> query_node = {6, 6, 6};
 
-    CompareVectors<int> compare(query_node);
-    std::set<std::vector<int>, CompareVectors<int>> NNS(compare);
-    std::unordered_set<std::vector<int>, VectorHash<int>> Visited;
+    CompareVectors<int> compare(ann.node_to_point_map,query_node);
+    std::set<int, CompareVectors<int>> NNS(compare);
+    std::unordered_set<int> Visited;
     NNS.insert(start_node);
 
     // k greater than number of nodes
     int k = 3;
     int upper_limit = 3;
 
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    std::set<std::vector<int>, CompareVectors<int>> expected(compare);
-    expected.insert({1, 2, 3});
-    expected.insert({4, 5, 6});
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
+    std::set<int, CompareVectors<int>> expected(compare);
+    expected.insert(0);
+    expected.insert(1);
     EXPECT_EQ(NNS, expected);
-
 
     NNS.clear();
     Visited.clear();
@@ -222,7 +192,7 @@ TEST(GreedySearch, KDifferentValues){
 
     // k equal to 0
     k = 0;
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
     EXPECT_TRUE(NNS.empty());
 
 
@@ -233,8 +203,8 @@ TEST(GreedySearch, KDifferentValues){
     // Test upper limit less than k
     upper_limit = 1;
     k = 2;
-    ann.greedySearch(start_node, query_node, k,upper_limit, NNS, Visited, compare);
-    EXPECT_TRUE(NNS.empty());
+    EXPECT_THROW(ann.greedySearch(start_node, k,upper_limit, NNS, Visited, compare), std::invalid_argument);
+    EXPECT_TRUE(NNS.size() == 1);   // Only the start node
 }
 
 // Test for unsigned char datatype
@@ -250,12 +220,12 @@ TEST(GreedySearch, UnsignedCharDatatype){
     };
 
     ANN<unsigned char> ann(points, edges);
-    std::vector<unsigned char> start_node = {'a', 'd', 'k'};
+    int start_node = 0;
     std::vector<unsigned char> query_node = {'m', 'm', 'm'};
     
-    CompareVectors<unsigned char> compare(query_node);
-    std::set<std::vector<unsigned char>, CompareVectors<unsigned char>> NNS(compare);
-    std::unordered_set<std::vector<unsigned char>, VectorHash<unsigned char>> Visited;
+    CompareVectors<unsigned char> compare(ann.node_to_point_map,query_node);
+    std::set<int, CompareVectors<unsigned char>> NNS(compare);
+    std::unordered_set<int> Visited;
     NNS.insert(start_node);
 
     
@@ -263,10 +233,10 @@ TEST(GreedySearch, UnsignedCharDatatype){
     int upper_limit = 3;
 
 
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    std::set<std::vector<unsigned char>, CompareVectors<unsigned char>> expected(compare);
-    expected.insert({'b', 'l', 'm'});
-    expected.insert({'c', 'n', 'o'});
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
+    std::set<int, CompareVectors<unsigned char>> expected(compare);
+    expected.insert(1);
+    expected.insert(2);
     EXPECT_EQ(NNS, expected);
 }
 
@@ -283,20 +253,20 @@ TEST(GreedySearch, FloatDatatype){
     };
 
     ANN<float> ann(points, edges);
-    std::vector<float> start_node = {1.1, 2.2, 3.3};
+    int start_node = 0;
     std::vector<float> query_node = {6.6, 6.6, 6.6};
 
-    CompareVectors<float> compare(query_node);
-    std::set<std::vector<float>, CompareVectors<float>> NNS(compare);
-    std::unordered_set<std::vector<float>, VectorHash<float>> Visited;
+    CompareVectors<float> compare(ann.node_to_point_map,query_node);
+    std::set<int, CompareVectors<float>> NNS(compare);
+    std::unordered_set<int> Visited;
     NNS.insert(start_node);
 
     int k = 2;
     int upper_limit = 3;
 
-    ann.greedySearch(start_node, query_node, k, upper_limit, NNS, Visited, compare);
-    std::set<std::vector<float>, CompareVectors<float>> expected(compare);
-    expected.insert({4.4, 5.5, 6.6});
-    expected.insert({7.7, 8.8, 9.9});
+    ann.greedySearch(start_node, k, upper_limit, NNS, Visited, compare);
+    std::set<int, CompareVectors<float>> expected(compare);
+    expected.insert(1);
+    expected.insert(2);
     EXPECT_EQ(NNS, expected);
 }

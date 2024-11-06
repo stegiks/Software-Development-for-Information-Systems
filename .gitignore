@@ -1,9 +1,19 @@
-## Ignore Visual Studio Code folder .vscode, 
-## build files, executables, datasets folder
-## and Visual Studio Live Share configuration file .vsls.json 
+## Ignore specific folders
 .vscode
 build
 bin
 datasets
 googletest
+sift*
+
+## Ignore files in the root of the repository
 .vsls.json
+*.txt
+*.out
+*.exe
+*.o
+*.a
+*.so
+*.dll
+*.lib
+*.data

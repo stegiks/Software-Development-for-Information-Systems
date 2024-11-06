@@ -37,11 +37,11 @@ protected:
 TEST_F(RobustPruneTest, BasicFunctionality){
 
     // Provide custom comparator for the set
-    CompareVectors<int> compare(start);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
-    candidate.insert({1, 2});
-    candidate.insert({1, 0});
-    candidate.insert({1, -5});
+    CompareVectors<int> compare(ann->node_to_point_map,start);
+    std::set<int, CompareVectors<int>> candidate(compare);
+    candidate.insert(0);
+    candidate.insert(1);
+    candidate.insert(3);
 
     std::vector<std::unordered_set<int>> expected = {
         {2},
@@ -52,7 +52,8 @@ TEST_F(RobustPruneTest, BasicFunctionality){
         {4}
     };
 
-    ann->robustPrune(start, candidate, 1.1, 5);
+    int start_node = 2;
+    ann->robustPrune(start_node, candidate, 1.1, 5);
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
@@ -60,10 +61,11 @@ TEST_F(RobustPruneTest, BasicFunctionality){
 // Test empty candidate set
 TEST_F(RobustPruneTest, EmptyCandidateSet){
 
-    CompareVectors<int> compare(start);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
+    CompareVectors<int> compare(ann->node_to_point_map,start);
+    std::set<int, CompareVectors<int>> candidate(compare);
 
-    ann->robustPrune(start, candidate, 1.1, 5);
+    int start_node = 2;
+    ann->robustPrune(start_node, candidate, 1.1, 5);
 
     EXPECT_TRUE(ann->checkGraph(edges));
 }
@@ -73,17 +75,18 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
     // Empty graph
     std::vector<std::vector<int>> points_alt = {};
     std::vector<std::unordered_set<int>> edges_alt = {};
-    std::vector<int> start_alt = {2, 3};
+    int start_alt = 2;
+    std::vector<int> start_alt_vector = {2, 3};
 
-    CompareVectors<int> compare(start_alt);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
-    candidate.insert({1, 2});
-    candidate.insert({1, 0});
-    candidate.insert({1, -5});
+    CompareVectors<int> compare(ann->node_to_point_map,start_alt_vector);
+    std::set<int, CompareVectors<int>> candidate(compare);
+    candidate.insert(0);
+    candidate.insert(1);
+    candidate.insert(3);
 
     ANN<int> ann_alt(points_alt, edges_alt);
-    ann_alt.robustPrune(start_alt, candidate, 1.1, 5);
 
+    EXPECT_THROW(ann_alt.robustPrune(start_alt, candidate, 1.1, 5), std::invalid_argument);
     EXPECT_TRUE(ann_alt.checkGraph(edges_alt));
 
     // Point not in graph
@@ -98,33 +101,28 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
     };
 
     ANN<int> ann_alt2(points_alt, edges_alt);
-    start_alt = {1, 1};
-    ann_alt2.robustPrune(start_alt, candidate, 1.1, 5);
+    start_alt = (int)points_alt.size();
+    start_alt++;
 
-    EXPECT_TRUE(ann_alt2.checkGraph(edges_alt));
-
-    // Point empty
-    start_alt = {};
-    ann_alt2.robustPrune(start_alt, candidate, 1.1, 5);
-
+    EXPECT_THROW(ann_alt2.robustPrune(start_alt, candidate, 1.1, 5), std::invalid_argument);
     EXPECT_TRUE(ann_alt2.checkGraph(edges_alt));
 }
 
 // Test alpha less than 1 and degree bound negative
 TEST_F(RobustPruneTest, InvalidAlphaDegree){
 
-    CompareVectors<int> compare(start);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
-    candidate.insert({1, 2});
-    candidate.insert({1, 0});
-    candidate.insert({1, -5});
+    CompareVectors<int> compare(ann->node_to_point_map,start);
+    std::set<int, CompareVectors<int>> candidate(compare);
+    candidate.insert(0);
+    candidate.insert(1);
+    candidate.insert(3);
 
     // Alpha less than 1
-    ann->robustPrune(start, candidate, 0.9, 5);
+    EXPECT_THROW(ann->robustPrune(0, candidate, 0.9, 5), std::invalid_argument);
     EXPECT_TRUE(ann->checkGraph(edges));
 
     // Degree bound negative
-    ann->robustPrune(start, candidate, 1.1, -5);
+    EXPECT_THROW(ann->robustPrune(0, candidate, 1.1, -5), std::invalid_argument);
     EXPECT_TRUE(ann->checkGraph(edges));
 }
 
@@ -133,14 +131,15 @@ TEST_F(RobustPruneTest, DegreeBoundOne){
     // Degree bound of 1 should return only the closest point
     // when giving the whole set of points as candidate set
     // but not the point itself
-    CompareVectors<int> compare(start);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
-    candidate.insert({1, 2});
-    candidate.insert({1, 0});
-    candidate.insert({2, 3});
-    candidate.insert({1, -5});
-    candidate.insert({3, -5});
-    candidate.insert({6, 2});
+    CompareVectors<int> compare(ann->node_to_point_map,start);
+    std::set<int, CompareVectors<int>> candidate(compare);
+    candidate.insert(0);
+    candidate.insert(1);
+    candidate.insert(2);
+    candidate.insert(3);
+    candidate.insert(4);
+    candidate.insert(5);
+
 
     std::vector<std::unordered_set<int>> expected = {
         {2},
@@ -151,18 +150,18 @@ TEST_F(RobustPruneTest, DegreeBoundOne){
         {4}
     };
 
-    ann->robustPrune(start, candidate, 1.1, 1);
+    ann->robustPrune(2, candidate, 1.1, 1);
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
 
 // Large alpha value resulting in no pruning of the candidate set
 TEST_F(RobustPruneTest, LargeAlpha){
-    CompareVectors<int> compare(start);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
-    candidate.insert({1, 2});
-    candidate.insert({1, 0});
-    candidate.insert({1, -5});
+    CompareVectors<int> compare(ann->node_to_point_map,start);
+    std::set<int, CompareVectors<int>> candidate(compare);
+    candidate.insert(0);
+    candidate.insert(1);
+    candidate.insert(3);
 
     std::vector<std::unordered_set<int>> expected = {
         {2},
@@ -173,14 +172,15 @@ TEST_F(RobustPruneTest, LargeAlpha){
         {4}
     };
 
-    ann->robustPrune(start, candidate, 1000, 5);
+    int start_node = 2;
+    ann->robustPrune(start_node, candidate, 1000, 5);
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
 
 TEST_F(RobustPruneTest, EmptySet) {
-    CompareVectors<int> compare(start);
-    std::set<std::vector<int>, CompareVectors<int>> candidate(compare);
+    CompareVectors<int> compare(ann->node_to_point_map,start);
+    std::set<int, CompareVectors<int>> candidate(compare);
 
     // Delete ann object created in the constructor
     delete ann;

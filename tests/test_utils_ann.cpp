@@ -35,11 +35,13 @@ TEST(UtilsANN, VectorComparison){
     std::vector<int> v1 = {15, 25, 35};
     std::vector<int> v2 = {4, 25, 35};
 
-    CompareVectors<int> vector_comparator(base_vec);
-    std::set<std::vector<int>, CompareVectors<int>> custom_set(vector_comparator);
-    custom_set.insert(v1);
-    custom_set.insert(v2);
+    std::vector<std::vector<int>> vec = {v1, v2};
 
-    // v1 should be closer to base_vec than v2
-    EXPECT_EQ(*(custom_set.begin()), v1);
+    CompareVectors<int> vector_comparator(vec, base_vec);
+    std::set<int, CompareVectors<int>> custom_set(vector_comparator);
+    custom_set.insert(0);
+    custom_set.insert(1);
+
+    // v1(0) should be closer to base_vec than v2(1)
+    EXPECT_EQ(*(custom_set.begin()), 0);
 }
