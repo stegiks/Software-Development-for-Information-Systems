@@ -12,7 +12,7 @@ CC := gcc
 CXX := g++
 
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -O3 -std=c++17
+CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -O3 -march=native -flto # After -std=c++17 optimization flags
 
 # Path to local google test libraries
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
