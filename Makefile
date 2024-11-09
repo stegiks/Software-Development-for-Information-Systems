@@ -50,7 +50,7 @@ test: $(BIN)/tests
 
 # Run
 run: $(BIN)/main
-	$(BIN)/main $(ARGS)
+	time $(BIN)/main $(ARGS)
 
 # Clean
 clean:
@@ -59,5 +59,8 @@ clean:
 # Valgrind
 valgrind: $(BIN)/main
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS)
+
+valgrind_tests: $(BIN)/tests
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/tests
 
 all: clean test

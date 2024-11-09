@@ -45,7 +45,7 @@ template <typename datatype>
 class CompareVectors{
 private:
     const std::vector<std::vector<datatype>>& m_node_to_point_map;      // Map from index to vector
-    mutable std::unordered_map<int, float> distance_map;                // Map from index to distance if it is calculated
+    mutable std::vector<float> distance_map;                // Map from index to distance if it is calculated
     const std::vector<datatype>& m_compare_vector;                      // The query point to compare distances to
     std::size_t dimension;
 
@@ -62,34 +62,34 @@ public:
                 throw std::invalid_argument("Query vector size does not match the data vector size");
             }
             
+            // Initialize the distance map with negative values
+            distance_map.resize(m_node_to_point_map.size(), -1.0f);
         }
 
     // Operator() compares the distances of points at indices a and b to the comparison vector.
     // If the distance of a node from the comparison vector has already been calculated, don't recalculate it.
     bool operator()(int a, int b) const {
-        float distance_a = 0.0;
-        float distance_b = 0.0;
+        float distance_a = 0.0f;
+        float distance_b = 0.0f;
 
-        auto it_a = distance_map.find(a);
-        auto it_b = distance_map.find(b);
-
-        if(it_a == distance_map.end()){
+        if(distance_map[a] < 0.0f){ 
             distance_a = calculateDistance(m_node_to_point_map[a], m_compare_vector, dimension);
             distance_map[a] = distance_a;
-        }
+        } 
         else{
-            distance_a = it_a->second;
+            distance_a = distance_map[a];
         }
 
-        if(it_b == distance_map.end()){
+        if(distance_map[b] < 0.0f){
             distance_b = calculateDistance(m_node_to_point_map[b], m_compare_vector, dimension);
             distance_map[b] = distance_b;
         }
         else{
-            distance_b = it_b->second;
+            distance_b = distance_map[b];
         }
 
         return distance_a < distance_b;
     }
+
 };
 #endif // ann_utils.h
