@@ -23,33 +23,37 @@ struct VectorHash{
     }
 };
 
-// Utility function to calculate the Euclidean distance between two vectors
+// Utility function to calculate the squared Euclidean distance between two vectors
 template <typename datatype>
-float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b){
-    double distance = .0;
+inline float calculateDistance(const std::vector<datatype>& a, const std::vector<datatype>& b, std::size_t dim){
+    double distance = 0.0;
     float max_float = std::numeric_limits<float>::max();
 
-    for(std::size_t i = 0; i < a.size(); i++){
-        distance += (a[i] - b[i]) * (a[i] - b[i]);
+    for(std::size_t i = 0; i < dim; i++){
+        double diff = a[i] - b[i];
+        distance += diff * diff;
         if(distance > max_float){
             return max_float;
         }
     }
-    return (float)std::sqrt(distance);
+    return (float)(distance);
 }
 
 
 // Comparator class for comparing indices based on the distance from a query point
 template <typename datatype>
 class CompareVectors{
-public:
-    const std::vector<std::vector<datatype>>& m_node_to_point_map;  // Map from index to vector
-    const std::vector<datatype>& m_compare_vector;  // The query point to compare distances to
+private:
+    const std::vector<std::vector<datatype>>& m_node_to_point_map;      // Map from index to vector
+    mutable std::vector<float> distance_map;                // Map from index to distance if it is calculated
+    const std::vector<datatype>& m_compare_vector;                      // The query point to compare distances to
+    std::size_t dimension;
 
+public:
     // Constructor now takes node-to-point map and a comparison vector
     CompareVectors(const std::vector<std::vector<datatype>>& node_to_point_map, 
                    const std::vector<datatype>& compare_vector)
-        : m_node_to_point_map(node_to_point_map), m_compare_vector(compare_vector) {
+        : m_node_to_point_map(node_to_point_map), m_compare_vector(compare_vector), dimension(compare_vector.size()){
             if(m_node_to_point_map.empty()){
                 throw std::invalid_argument("Node to point map is empty");
             }
@@ -58,12 +62,34 @@ public:
                 throw std::invalid_argument("Query vector size does not match the data vector size");
             }
             
+            // Initialize the distance map with negative values
+            distance_map.resize(m_node_to_point_map.size(), -1.0f);
         }
 
-    // Operator() compares the distances of points at indices a and b to the comparison vector
+    // Operator() compares the distances of points at indices a and b to the comparison vector.
+    // If the distance of a node from the comparison vector has already been calculated, don't recalculate it.
     bool operator()(int a, int b) const {
-        return calculateDistance(m_node_to_point_map[a], m_compare_vector) 
-             < calculateDistance(m_node_to_point_map[b], m_compare_vector); 
+        float distance_a = 0.0f;
+        float distance_b = 0.0f;
+
+        if(distance_map[a] < 0.0f){ 
+            distance_a = calculateDistance(m_node_to_point_map[a], m_compare_vector, dimension);
+            distance_map[a] = distance_a;
+        } 
+        else{
+            distance_a = distance_map[a];
+        }
+
+        if(distance_map[b] < 0.0f){
+            distance_b = calculateDistance(m_node_to_point_map[b], m_compare_vector, dimension);
+            distance_map[b] = distance_b;
+        }
+        else{
+            distance_b = distance_map[b];
+        }
+
+        return distance_a < distance_b;
     }
+
 };
 #endif // ann_utils.h

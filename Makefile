@@ -12,7 +12,7 @@ CC := gcc
 CXX := g++
 
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -O2 -std=c++17
+CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -O3 -march=native -flto # After -std=c++17 optimization flags
 
 # Path to local google test libraries
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
@@ -50,14 +50,17 @@ test: $(BIN)/tests
 
 # Run
 run: $(BIN)/main
-	$(BIN)/main $(ARGS)
+	time $(BIN)/main $(ARGS)
 
 # Clean
 clean:
-	rm -rf $(BUILD)/* $(BIN)/* gmon.out
+	rm -rf $(BUILD)/* $(BIN)/* *.txt *.out
 
 # Valgrind
 valgrind: $(BIN)/main
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS)
+
+valgrind_tests: $(BIN)/tests
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/tests
 
 all: clean test

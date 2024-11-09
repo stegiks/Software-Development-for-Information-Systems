@@ -1,11 +1,13 @@
-## Ignore Visual Studio Code folder .vscode, 
-## build files, executables, datasets folder
-## and Visual Studio Live Share configuration file .vsls.json 
-.vscode
-build
-bin
-datasets
-googletest
-.vsls.json
-sift*
-*.txt
+## Ignore everything
+*
+
+## But not these files and folders
+!.gitignore
+!setup.sh
+!setup_datasets.sh
+!Makefile
+!README.md
+!.github/
+!src/
+!include/
+!tests
