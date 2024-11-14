@@ -31,6 +31,7 @@ private:
 
 public:
     std::vector<std::vector<datatype>> node_to_point_map;
+    std::vector<float> node_to_filter_map;                  // Filter values for each node
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
     ANN(const std::vector<std::vector<datatype>>& points, size_t reg);
