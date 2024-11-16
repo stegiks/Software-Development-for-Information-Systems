@@ -45,11 +45,15 @@ public:
     bool checkNeighbour(int a, int b);
     const int& getMedoid();
 
+    // Filtered Grreedy Search
     template <typename Compare>
-    void greedySearch(const int & start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+    void filteredGreedySearch(const int& start_node, const int& query_node, int k, int upper_limit, const float& filter_query_value, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
 
     template <typename Compare>
-    void robustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound);
+    void greedySearch(const int& start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+
+    template <typename Compare>
+    void robustPrune(const int& point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound);
     void Vamana(float alpha,int L,int R);
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);

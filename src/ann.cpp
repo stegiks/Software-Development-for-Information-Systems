@@ -176,6 +176,57 @@ bool ANN<datatype>::checkNeighbour(int a, int b){
     return this->G->isNeighbour(a,b);
 }
 
+// Filtered Greedy Search algorithm to find the nearest neighbours with a filter value
+template <typename datatype>
+template <typename Compare>
+void ANN<datatype>::filteredGreedySearch(const int& start_node, const int& query_node, int k, int upper_limit, const float& filter_query_value, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare){
+    // Error handling
+    if(this->checkErrorsGreedy(start_node, k, upper_limit)){
+        NNS.clear();
+        return;
+    }
+
+    // If the filter of the start node is the same as the query node, 
+    // then the start node gets inserted into the NNS set
+    std::set<int, Compare> difference(compare);
+    if(this->node_to_filter_map[start_node] == filter_query_value){
+        NNS.insert(start_node);
+        difference.insert(start_node);
+    } 
+
+    std::vector<int> neighbours;
+
+    while(!difference.empty()){
+        // Get the index of the closest point
+        int closest_point = *(difference.begin());
+        difference.erase(closest_point);
+
+        // Add the closest point to the Visited set
+        Visited.insert(closest_point);
+
+        // Get the neighbors of the closest point
+        neighbours.clear();
+        this->neighbourNodes(closest_point, neighbours);
+
+        // Update NNS set
+        for(const int& neighbour : neighbours){
+            if((Visited.find(neighbour) == Visited.end()) && this->node_to_filter_map[neighbour] == filter_query_value){
+                NNS.insert(neighbour);
+                difference.insert(neighbour);
+            }
+        }
+
+        // Prune NNS to retain upper_limit closest points
+        if(NNS.size() > (std::size_t)upper_limit){
+            this->pruneSet(NNS, difference, upper_limit);
+        }
+    }
+
+    if(NNS.size() > (std::size_t)k){
+        this->pruneSet(NNS, difference, k);
+    }
+}
+
 // Greedy search algorithm to find the nearest neighbours
 template <typename datatype>
 template <typename Compare>
