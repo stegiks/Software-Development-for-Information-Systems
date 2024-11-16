@@ -20,6 +20,8 @@ class ANN{
 private:
     Graph* G;
     std::unordered_map<std::vector<datatype>, int, VectorHash<datatype>> point_to_node_map;
+    std::unordered_map<float, std::vector<int>> filter_to_node_map;
+    std::unordered_map<float, int> filter_to_start_node;
     std::optional<int> cached_medoid;
 
     template <typename Compare>
@@ -32,9 +34,12 @@ private:
 public:
     std::vector<std::vector<datatype>> node_to_point_map;
     std::vector<float> node_to_filter_map;                  // Filter values for each node
+
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
     ANN(const std::vector<std::vector<datatype>>& points, size_t reg);
+    ANN(const std::vector<std::vector<datatype>>& points, const std::vector<float>& filters);
+
     ~ANN();
     bool checkGraph(std::vector<std::unordered_set<int>> edges);
     bool checkNeighbour(int a, int b);

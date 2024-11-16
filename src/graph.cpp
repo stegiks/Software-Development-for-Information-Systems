@@ -1,18 +1,23 @@
 #include "graph.h"
 #include <random>
-Graph::Graph(std::size_t n){
+
+Graph::Graph(std::size_t n, bool init_empty){
     // Randomly generate a graph with n nodes
-    srand(time(NULL));
-    this->adj_list = std::vector<std::unordered_set<int>>(n);
     this->num_nodes = n;
+    this->adj_list = std::vector<std::unordered_set<int>>(n);
+
+    if(init_empty)
+        return;
+
+    // If not empty, randomly generate edges
+    srand(time(NULL));
     for(std::size_t i = 0; i < n; i++){
         for(std::size_t j = 0; j < n; j++){
             if(rand() % 2 == 1 && i != j){
                 this->adj_list.at(i).insert(j);
             }
         }
-    }
-    
+    }    
 }
 
 

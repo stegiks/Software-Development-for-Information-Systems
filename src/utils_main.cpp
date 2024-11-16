@@ -78,6 +78,77 @@ std::vector<std::vector<datatype>> parseVecs(const std::string& file_path){
 }
 
 template <typename datatype>
+void parseQueryVector(const std::string& path, std::vector<Query<datatype>>& queries){
+    std::ifstream file(path, std::ios::binary);
+
+    if(!file){
+        throw std::runtime_error("Could not open file");
+    }
+
+    u_int32_t num_queries;
+    file.read((char*)&num_queries, sizeof(u_int32_t));
+
+    // We don't want to keep all the points because we don't care about timestamps queries.
+    // So we don't care for query_id 2 and 3. That's why we don't preallocate memory for the points.
+    for(u_int32_t i = 0; i < num_queries; i++){
+        float query_id;
+        float category_value;
+
+        // Read first 8 bytes and then skip the next 8 bytes
+        file.read((char*)&query_id, sizeof(float));
+        file.read((char*)&category_value, sizeof(float));
+        file.seekg(2 * sizeof(float), std::ios::cur);
+
+        // Read the 100 dimension float vector
+        std::vector<datatype> point(100);
+        file.read((char*)point.data(), 100 * sizeof(datatype));
+
+        // Use std::move to avoid copying the vector
+        if(query_id == 0 || query_id == 1){
+            Query query;
+            query.query_id = query_id;
+            query.category_value = category_value;
+            query.point = std::move(point);
+            queries.push_back(std::move(query));
+        }
+    }
+
+    file.close();
+}
+
+template <typename datatype>
+void parseDataVector(const std::string& path, std::vector<float>& vec_with_category_values, std::vector<std::vector<datatype>>& vec_with_points){
+    std::ifstream file(path, std::ios::binary);
+
+    if(!file){
+        throw std::runtime_error("Could not open file");
+    }
+
+    u_int32_t num_points;
+    file.read((char*)&num_points, sizeof(u_int32_t));
+    std::cout << "Number of points: " << num_points << std::endl;
+
+    // Preallocate memory for the vectors, because we know the size
+    vec_with_category_values.resize(num_points);
+    // ! This may need a change because we may not know the dimension of the point vector.
+    // ! In the datasets that we have, the dimension is always 100.
+    vec_with_points.resize(num_points, std::vector<float>(100));
+
+    for(u_int32_t i = 0; i < num_points; i++){
+        // Categorical filter
+        file.read((char*)&vec_with_category_values[i], sizeof(float));
+
+        // Skip the 4 bytes used for timestamp
+        file.seekg(4, std::ios::cur);
+
+        // Read the 100 dimension float vector
+        file.read((char*)vec_with_points[i].data(), 100 * sizeof(float));
+    }
+
+    file.close();
+}
+
+template <typename datatype>
 void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L){
     
     std::vector<std::vector<datatype>> base = parseVecs<datatype>(file_path_base);
