@@ -113,20 +113,20 @@ ANN<datatype>::~ANN(){
 template<typename datatype>
 bool ANN<datatype>::checkErrorsGreedy(const int& start, int k, int upper_limit){
     if(this->node_to_point_map.empty()){
-        std::cerr << RED << "Error : Graph is empty" << RESET << std::endl;
+        std::cerr   << "Error : Graph is empty" << RESET << std::endl;
         throw std::invalid_argument("greedySearch: Graph is empty");
         return true;
     }
 
     if(start < 0 || (size_t)start >= this->node_to_point_map.size()){
-        std::cerr << RED << "Error : Start point is empty" << RESET << std::endl;
+        std::cerr   << "Error : Start point is empty" << RESET << std::endl;
         throw std::invalid_argument("greedySearch: Start point is empty");
         return true;
     }
 
 
     if(upper_limit < k){
-        std::cerr << RED << "Error : Upper limit cannot be less than k" << RESET << std::endl;
+        std::cerr   << "Error : Upper limit cannot be less than k" << RESET << std::endl;
         throw std::invalid_argument("greedySearch: Upper limit cannot be less than k");
         return true;
     }
@@ -138,26 +138,26 @@ template <typename datatype>
 bool ANN<datatype>::checkErrorsRobust(const int & point, const float alpha, const int degree_bound){
 
     if(this->node_to_point_map.empty()){
-        std::cerr << RED << "Error : Graph is empty" << RESET << std::endl;
+        std::cerr   << "Error : Graph is empty" << RESET << std::endl;
         throw std::invalid_argument("robustPrune: Graph is empty");
         return true;
     }
 
     if(point< 0 || (size_t)point >= this->node_to_point_map.size()){
-        std::cerr << RED << "Error : Point is empty" << RESET << std::endl;
+        std::cerr   << "Error : Point is empty" << RESET << std::endl;
         throw std::invalid_argument("robustPrune: Point is empty");
         return true;
     }
 
 
     if(alpha < 1.0){
-        std::cerr << RED << "Error : Alpha cannot be less than 1" << RESET << std::endl;
+        std::cerr   << "Error : Alpha cannot be less than 1" << RESET << std::endl;
         throw std::invalid_argument("robustPrune: Alpha cannot be less than 1");
         return true;
     }
 
     if(degree_bound < 0){
-        std::cerr << RED << "Error : Degree bound cannot be negative" << RESET << std::endl;
+        std::cerr   << "Error : Degree bound cannot be negative" << RESET << std::endl;
         throw std::invalid_argument("robustPrune: Degree bound cannot be negative");
         return true;
     }
@@ -280,7 +280,7 @@ template <typename datatype>
 void ANN<datatype>::calculateMedoid(){
     std::size_t n = this->node_to_point_map.size();
     if(n == 0){
-        std::cerr << RED << "Error : No points in the dataset" << RESET << std::endl;
+        std::cerr   << "Error : No points in the dataset" << RESET << std::endl;
         throw std::invalid_argument("calculateMedoid: No points in the dataset");
         return;
     }

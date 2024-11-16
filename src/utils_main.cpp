@@ -16,26 +16,26 @@ bool validateExtension(const std::string& file_path_base, const std::string& fil
     std::string extension_gt = findExtension(file_path_gt);
     
     if(extension_base != extension_query){
-        std::cerr << RED << "Error : Base and query files have different extensions" << RESET << std::endl;
+        std::cerr   << "Error : Base and query files have different extensions" << RESET << std::endl;
         throw std::invalid_argument("Base and query files have different extensions");
         return false;
     }
 
     if(extension_base != "ivecs" && extension_base != "fvecs" && extension_base != "bvecs"){
-        std::cerr << RED << "Error : Base and Query files have an invalid extension" << RESET << std::endl;
+        std::cerr   << "Error : Base and Query files have an invalid extension" << RESET << std::endl;
         std::cerr << BLUE << "Valid extensions are : ivecs, fvecs, bvecs" << RESET << std::endl;
         throw std::invalid_argument("Base and Query files have an invalid extension");
         return false;
     }
 
     if(file_format != extension_base){
-        std::cerr << RED << "Error : File format and extension base are not the same" << RESET << std::endl;
+        std::cerr   << "Error : File format and extension base are not the same" << RESET << std::endl;
         throw std::invalid_argument("File format and extension base are not the same");
         return false;
     }
 
     if(extension_gt != "ivecs"){
-        std::cerr << RED << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
+        std::cerr   << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
         std::cerr << BLUE << "Valid extension is : ivecs" << RESET << std::endl;
         throw std::invalid_argument("Ground truth file has an invalid extension");
         return false;
@@ -105,7 +105,7 @@ void parseQueryVector(const std::string& path, std::vector<Query<datatype>>& que
 
         // Use std::move to avoid copying the vector
         if(query_id == 0 || query_id == 1){
-            Query query;
+            Query<datatype> query;
             query.query_id = query_id;
             query.category_value = category_value;
             query.point = std::move(point);
