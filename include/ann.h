@@ -45,6 +45,8 @@ public:
     bool checkNeighbour(int a, int b);
     const int& getMedoid();
 
+    void filteredFindMedoid(int tau);
+
     // Filtered Grreedy Search
     template <typename Compare>
     void filteredGreedySearch(const int& start_node, const int& query_node, int k, int upper_limit, const float& filter_query_value, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);

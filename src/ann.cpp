@@ -328,6 +328,55 @@ void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candid
 }
 
 template <typename datatype>
+void ANN<datatype>::filteredFindMedoid(int tau){
+    if(this->node_to_filter_map.empty()){
+        throw std::invalid_argument("filteredFindMedoid: Filter map is empty");
+        return;
+    }
+
+    // Init T to a zero map that maps the id of a filter to usage count
+    std::unordered_map<int, int> T;
+    std::size_t n = this->node_to_point_map.size();
+    for(std::size_t i = 0; i < n; i++){
+        T[i] = 0;
+    }
+
+    // unordered_set to avoid duplicates
+    std::unordered_set<float> all_filter_values;
+    for(const auto& filter : this->node_to_filter_map){
+        all_filter_values.insert(filter);
+    }
+
+    if(all_filter_values.size() == 0){
+        throw std::invalid_argument("filteredFindMedoid: No filter values in the dataset");
+        return;
+    }
+
+    for(const float& filter : all_filter_values){
+        // For Pf in the pseudo code we will use the filter_to_node_map to get the nodes with the same filter value 
+        std::vector<int>& Pf = this->filter_to_node_map[filter];
+        
+        // Randomly take a sample of max tau nodes from Pf
+        std::vector<int> Rf;
+        std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
+        std::sample(Pf.begin(), Pf.end(), std::back_inserter(Rf), tau, rng);
+
+        int min_node = Rf[0];
+        int min_count = T[min_node];
+        for(const int& node : Rf){
+            if(T[node] < min_count){
+                min_node = node;
+                min_count = T[node];
+            }
+        }
+
+        // Update T and filter_to_start_node
+        T[min_node] += 1;
+        this->filter_to_start_node[filter] = min_node;
+    }
+}
+
+template <typename datatype>
 void ANN<datatype>::calculateMedoid(){
     std::size_t n = this->node_to_point_map.size();
     if(n == 0){
