@@ -31,6 +31,8 @@ private:
     bool checkErrorsRobust(const int &point, const float alpha, const int degree_bound);
     void calculateMedoid();
 
+    void filteredCalculateMedoid();
+
 public:
     std::vector<std::vector<datatype>> node_to_point_map;
     std::vector<float> node_to_filter_map;                  // Filter values for each node
@@ -47,10 +49,16 @@ public:
 
     template <typename Compare>
     void greedySearch(const int & start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+    template <typename Compare>
+    void filteredGreedySearch(const int & start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
 
     template <typename Compare>
     void robustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound);
+    template <typename Compare>
+    void filteredRobustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound);
+
     void Vamana(float alpha,int L,int R);
+    void filteredVamana(float alpha, int L, int R);
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);
