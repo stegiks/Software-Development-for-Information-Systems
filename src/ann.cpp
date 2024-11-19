@@ -118,7 +118,7 @@ bool ANN<datatype>::checkErrorsGreedy(const int& start, int k, int upper_limit){
         return true;
     }
 
-    if(start < 0 || (size_t)start >= this->node_to_point_map.size()){
+    if(start < -1 || (size_t)start >= this->node_to_point_map.size()){
         std::cerr   << "Error : Start point is empty" << RESET << std::endl;
         throw std::invalid_argument("greedySearch: Start point is empty");
         return true;
@@ -186,11 +186,17 @@ void ANN<datatype>::filteredGreedySearch(const int& start_node, const int& query
         return;
     }
 
-    // If the filter of the start node is the same as the query node, 
-    // then the start node gets inserted into the NNS set
+    // If the start_node has value -1, then this means we are checking for a unfiltered query.
+    // In this case, we have to use all the start nodes for every subgraph.
     std::set<int, Compare> difference(compare);
-    if(this->node_to_filter_map[start_node] == filter_query_value){
-        NNS.insert(start_node);
+    if(start_node == -1){
+        for(const auto& pair : this->filter_to_start_node){
+            NNS.insert(pair.second);
+            difference.insert(pair.second);
+        }
+    }
+    else{
+        // If the start_node is not -1, then NNS contains the start_node already
         difference.insert(start_node);
     } 
 
@@ -208,12 +214,17 @@ void ANN<datatype>::filteredGreedySearch(const int& start_node, const int& query
         neighbours.clear();
         this->neighbourNodes(closest_point, neighbours);
 
-        // Update NNS set
         for(const int& neighbour : neighbours){
-            if((Visited.find(neighbour) == Visited.end()) && this->node_to_filter_map[neighbour] == filter_query_value){
-                NNS.insert(neighbour);
-                difference.insert(neighbour);
-            }
+            // Skip if the neighbour has already been visited
+            if(Visited.find(neighbour) != Visited.end())
+                continue;
+            
+            // Filtered query handle
+            if(start_node != -1 && this->node_to_filter_map[neighbour] != filter_query_value)
+                continue;
+            
+            NNS.insert(neighbour);
+            difference.insert(neighbour);
         }
 
         // Prune NNS to retain upper_limit closest points
@@ -334,45 +345,19 @@ void ANN<datatype>::filteredFindMedoid(int tau){
         return;
     }
 
-    // Init T to a zero map that maps the id of a filter to usage count
-    std::unordered_map<int, int> T;
-    std::size_t n = this->node_to_point_map.size();
-    for(std::size_t i = 0; i < n; i++){
-        T[i] = 0;
-    }
+    // Iterate through all filter values
+    for(const auto& pair : this->filter_to_node_map){
+        const float& filter = pair.first;
+        const std::vector<int>& Pf = pair.second;
 
-    // unordered_set to avoid duplicates
-    std::unordered_set<float> all_filter_values;
-    for(const auto& filter : this->node_to_filter_map){
-        all_filter_values.insert(filter);
-    }
-
-    if(all_filter_values.size() == 0){
-        throw std::invalid_argument("filteredFindMedoid: No filter values in the dataset");
-        return;
-    }
-
-    for(const float& filter : all_filter_values){
-        // For Pf in the pseudo code we will use the filter_to_node_map to get the nodes with the same filter value 
-        std::vector<int>& Pf = this->filter_to_node_map[filter];
-        
         // Randomly take a sample of max tau nodes from Pf
+        // ! CHECK FOR BETTER WAY TO SAMPLE RANDOMLY
         std::vector<int> Rf;
         std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
         std::sample(Pf.begin(), Pf.end(), std::back_inserter(Rf), tau, rng);
 
-        int min_node = Rf[0];
-        int min_count = T[min_node];
-        for(const int& node : Rf){
-            if(T[node] < min_count){
-                min_node = node;
-                min_count = T[node];
-            }
-        }
-
-        // Update T and filter_to_start_node
-        T[min_node] += 1;
-        this->filter_to_start_node[filter] = min_node;
+        // Select the first node as it is randomly sampled
+        this->filter_to_start_node[filter] = Rf[0];
     }
 }
 
