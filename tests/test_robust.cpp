@@ -53,7 +53,7 @@ TEST_F(RobustPruneTest, BasicFunctionality){
     };
 
     int start_node = 2;
-    ann->robustPrune(start_node, candidate, 1.1, 5);
+    ann->robustPrune(start_node, candidate, 1.1, 5, UNFILTERED);
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
@@ -65,7 +65,7 @@ TEST_F(RobustPruneTest, EmptyCandidateSet){
     std::set<int, CompareVectors<int>> candidate(compare);
 
     int start_node = 2;
-    ann->robustPrune(start_node, candidate, 1.1, 5);
+    ann->robustPrune(start_node, candidate, 1.1, 5, UNFILTERED);
 
     EXPECT_TRUE(ann->checkGraph(edges));
 }
@@ -86,7 +86,7 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
 
     ANN<int> ann_alt(points_alt, edges_alt);
 
-    EXPECT_THROW(ann_alt.robustPrune(start_alt, candidate, 1.1, 5), std::invalid_argument);
+    EXPECT_THROW(ann_alt.robustPrune(start_alt, candidate, 1.1, 5, UNFILTERED), std::invalid_argument);
     EXPECT_TRUE(ann_alt.checkGraph(edges_alt));
 
     // Point not in graph
@@ -104,7 +104,7 @@ TEST_F(RobustPruneTest, InvalidGraphPoint){
     start_alt = (int)points_alt.size();
     start_alt++;
 
-    EXPECT_THROW(ann_alt2.robustPrune(start_alt, candidate, 1.1, 5), std::invalid_argument);
+    EXPECT_THROW(ann_alt2.robustPrune(start_alt, candidate, 1.1, 5, UNFILTERED), std::invalid_argument);
     EXPECT_TRUE(ann_alt2.checkGraph(edges_alt));
 }
 
@@ -118,11 +118,11 @@ TEST_F(RobustPruneTest, InvalidAlphaDegree){
     candidate.insert(3);
 
     // Alpha less than 1
-    EXPECT_THROW(ann->robustPrune(0, candidate, 0.9, 5), std::invalid_argument);
+    EXPECT_THROW(ann->robustPrune(0, candidate, 0.9, 5, UNFILTERED), std::invalid_argument);
     EXPECT_TRUE(ann->checkGraph(edges));
 
     // Degree bound negative
-    EXPECT_THROW(ann->robustPrune(0, candidate, 1.1, -5), std::invalid_argument);
+    EXPECT_THROW(ann->robustPrune(0, candidate, 1.1, -5, UNFILTERED), std::invalid_argument);
     EXPECT_TRUE(ann->checkGraph(edges));
 }
 
@@ -150,7 +150,7 @@ TEST_F(RobustPruneTest, DegreeBoundOne){
         {4}
     };
 
-    ann->robustPrune(2, candidate, 1.1, 1);
+    ann->robustPrune(2, candidate, 1.1, 1, UNFILTERED);
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
@@ -173,7 +173,7 @@ TEST_F(RobustPruneTest, LargeAlpha){
     };
 
     int start_node = 2;
-    ann->robustPrune(start_node, candidate, 1000, 5);
+    ann->robustPrune(start_node, candidate, 1000, 5, UNFILTERED);
 
     EXPECT_TRUE(ann->checkGraph(expected));
 }
