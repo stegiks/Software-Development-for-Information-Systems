@@ -1,6 +1,10 @@
 #ifndef ANN_H
 #define ANN_H
 
+
+#define FILTERED true
+#define UNFILTERED false
+
 #include <iostream>
 #include <vector>
 #include <set>
@@ -31,6 +35,7 @@ private:
     bool checkErrorsRobust(const int &point, const float alpha, const int degree_bound);
     void calculateMedoid();
 
+    void filteredPruning();
 public:
     std::vector<std::vector<datatype>> node_to_point_map;
     std::vector<float> node_to_filter_map;                  // Filter values for each node
@@ -48,24 +53,26 @@ public:
 
     // For testing
     bool checkFilteredFindMedoid(std::size_t num_of_filters);
-
-    void filteredFindMedoid(int tau);
+    void filteredFindMedoid(int);
 
     // Fill filter_to_start_node for testing
     void fillFilterToStartNode(std::unordered_map<float, int>& filter_to_start_node);
 
-    // Filtered Grreedy Search
     template <typename Compare>
-    void filteredGreedySearch(const int& start_node, int k, int upper_limit, const float& filter_query_value, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+    void greedySearch(const int & start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+    template <typename Compare>
+    void filteredGreedySearch(const int & start_node, int k, int upper_limit,const float & filter, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
 
+    
     template <typename Compare>
-    void greedySearch(const int& start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
-
-    template <typename Compare>
-    void robustPrune(const int& point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound);
-    void Vamana(float alpha,int L,int R);
+    void robustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered);
+    
+    void Vamana(float, int, int);
+    void filteredVamana(float, int, int, int);
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);
+
+    void printGraph();
 };
 #endif // ann.h

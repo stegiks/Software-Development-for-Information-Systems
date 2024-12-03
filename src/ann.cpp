@@ -104,6 +104,11 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
 }
 
 template <typename datatype>
+void ANN<datatype>:: printGraph(){
+    this->G->printGraph();
+}
+
+template <typename datatype>
 ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges, const std::vector<float>& filters){
     if(points.size() != filters.size()){
         throw std::invalid_argument("ANN: Number of points and filters do not match");
@@ -317,11 +322,61 @@ void ANN<datatype>::greedySearch(const int& start, int k, int upper_limit, std::
     this->pruneSet(NNS, difference, k);
 }
 
+// template <typename datatype>
+// template <typename Compare>
+// void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered){
+    
+//     // Error handling
+//     if(this->checkErrorsRobust(point, alpha, degree_bound))
+//         return;
+    
+//     std::vector<int> neighbours;
+//     this->neighbourNodes(point, neighbours);
+
+//     for(const auto& neighbour : neighbours){
+//         candidate_set.insert(neighbour);
+//     }
+
+//     // Remove point p from candidate_set and prune all its neighbours
+//     candidate_set.erase(point);
+//     this->G->removeNeighbours(point);
+
+//     while(true){
+
+//         if(candidate_set.size() == 0)
+//             break;
+
+//         int closest_point = *(candidate_set.begin());
+
+//         // Closest point would have been removed from candidate set in alpha comparison step anyway
+//         candidate_set.erase(closest_point);
+//         this->G->addEdge(point, closest_point);
+
+//         if(this->G->countNeighbours(point) == degree_bound)
+//             break;
+
+//         for(auto it = candidate_set.begin(); it != candidate_set.end();){
+//             const auto& element = *it;
+
+//             auto x = this->node_to_point_map[closest_point];
+//             auto y = this->node_to_point_map[element];
+//             auto z = this->node_to_point_map[point];
+//             std::size_t dim = y.size();
+
+//             if(alpha * float(calculateDistance(x, y, dim)) <= float(calculateDistance(y, z, dim))){
+//                 it = candidate_set.erase(it);
+//             }
+//             else{
+//                 it++;
+//             }
+//         }
+//     }
+// }
+
 template <typename datatype>
 template <typename Compare>
-void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound){
-    
-    // Error handling
+void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered){
+     // Error handling
     if(this->checkErrorsRobust(point, alpha, degree_bound))
         return;
     
@@ -346,13 +401,19 @@ void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candid
         // Closest point would have been removed from candidate set in alpha comparison step anyway
         candidate_set.erase(closest_point);
         this->G->addEdge(point, closest_point);
-
         if(this->G->countNeighbours(point) == degree_bound)
             break;
 
         for(auto it = candidate_set.begin(); it != candidate_set.end();){
             const auto& element = *it;
-
+           
+            if(filtered == FILTERED){
+                if(!((this->node_to_filter_map[element] == this->node_to_filter_map[closest_point] &&
+                    this->node_to_filter_map[element] == this->node_to_filter_map[point]) || this->node_to_filter_map[element] != this->node_to_filter_map[point])){
+                    it++;
+                    continue;
+                }
+            }
             auto x = this->node_to_point_map[closest_point];
             auto y = this->node_to_point_map[element];
             auto z = this->node_to_point_map[point];
@@ -488,7 +549,7 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
             VisitedRobust.insert(*it);
         }
 
-        this->robustPrune(point, VisitedRobust, alpha, R);
+        this->robustPrune(point, VisitedRobust, alpha, R, UNFILTERED);
 
         this->neighbourNodes(point, neighbours);
 
@@ -510,7 +571,7 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
                 neighbours_j.clear();
                 
                 // Call robust for j neighbours
-                this->robustPrune(j, temp, alpha, R);
+                this->robustPrune(j, temp, alpha, R, UNFILTERED);
             }
             else{
                 // Make an edge between j and point too
@@ -520,6 +581,98 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 
         neighbours.clear();
     }
+}
+
+
+
+
+template <typename datatype>
+void ANN<datatype>::filteredPruning(){
+    // Iterate over all the edges and if the filter values are different, remove the edge
+    for(size_t i = 0; i < this->G->getNumberOfNodes(); i++){
+        std::unordered_set<int>& neighbours = this->G->getNeighbours(i);
+        std::vector<int> to_remove;
+
+        for(int neighbour : neighbours){
+            if(this->node_to_filter_map[i] != this->node_to_filter_map[neighbour]){
+                to_remove.push_back(neighbour);
+            }
+        }
+
+        for(int neighbour : to_remove){
+            this->G->removeEdge(i, neighbour);
+        }
+    }
+}
+
+
+template <typename datatype>
+void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau){
+    this->G->enforceRegular(0);
+  
+    std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
+
+    // Calculate medoid of dataset
+    this->filteredFindMedoid(tau);
+
+    // Get a random permutation of 1 to n
+    std::vector<int> perm;
+
+    for(size_t i=0;i<this->node_to_point_map.size();i++){
+        perm.push_back(i);
+    }
+
+    unsigned seed = 0;
+    std::shuffle(perm.begin(), perm.end(), std::default_random_engine(seed));
+
+    // Neighbours vectors to use inside the loop
+    std::vector<int> neighbours;
+    std::vector<int> neighbours_j;
+
+    for(size_t i = 0; i < this->node_to_point_map.size(); i++){
+        int point = perm[i];
+
+        CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+        std::set<int, CompareVectors<datatype>> NNS(compare);
+        std::unordered_set<int> Visited;
+
+        int temporary_point = this->filter_to_start_node[this->node_to_filter_map[point]];
+        float filter = this->node_to_filter_map[point];
+
+        NNS.insert(temporary_point);
+
+        // Return k closest points to Xq (point) and then with robust find "better" neighbours
+        this->filteredGreedySearch(temporary_point, 1, L, filter, NNS, Visited, compare);
+        
+        // Transform Visited to a set with a custom comparator
+        std::set<int, CompareVectors<datatype>> VisitedRobust(compare);
+        for(auto it = Visited.begin(); it != Visited.end(); it++){
+            VisitedRobust.insert(*it);
+        }
+
+        this->robustPrune(point, VisitedRobust, alpha, R, FILTERED);
+
+        this->neighbourNodes(point, neighbours);
+
+        for(auto j : neighbours){
+            
+            this->G->addEdge(j, point);
+
+            if(this->G->countNeighbours(j) > R){
+                // Call robust for j neighbours
+                std::set<int, CompareVectors<datatype>> temp(compare);
+
+                this->neighbourNodes(j, neighbours_j);
+                for(auto k : neighbours_j){
+                    temp.insert(k);
+                }
+                this->robustPrune(j, temp, alpha, R, FILTERED);
+            }
+        }
+
+
+    }
+  
 }
 
 // Explicit instantiation of ANN class for datatype int, float and unsigned char
@@ -587,19 +740,22 @@ template void ANN<int>::robustPrune<CompareVectors<int>>(
     const int&, 
     std::set<int, CompareVectors<int>>&, 
     const float, 
-    const int
+    const int,
+    bool
 );
 
 template void ANN<float>::robustPrune<CompareVectors<float>>(
     const int&, 
     std::set<int, CompareVectors<float>>&, 
     const float, 
-    const int
+    const int,
+    bool
 );
 
 template void ANN<unsigned char>::robustPrune<CompareVectors<unsigned char>>(
     const int&, 
     std::set<int, CompareVectors<unsigned char>>&, 
     const float, 
-    const int
+    const int,
+    bool
 );

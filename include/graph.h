@@ -40,6 +40,7 @@ public:
     bool checkSimilarity(std::vector<std::unordered_set<int>> edges);
     void printGraph();
 
+    std::size_t getNumberOfNodes();
     void enforceRegular(int R);
 };
 

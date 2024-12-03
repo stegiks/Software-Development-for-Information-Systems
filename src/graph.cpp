@@ -135,3 +135,8 @@ void Graph::enforceRegular(int R){
         }
     }
 }
+
+
+std::size_t Graph::getNumberOfNodes(){
+    return this->num_nodes;
+}
