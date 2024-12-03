@@ -370,7 +370,7 @@ void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candid
 
 template <typename datatype>
 bool ANN<datatype>::checkFilteredFindMedoid(std::size_t num_of_filters){
-    if(this->filter_to_node_map.size() != num_of_filters){
+    if(this->filter_to_start_node.size() != num_of_filters){
         throw std::invalid_argument("filteredFindMedoid: Filter map size does not match the number of filters");
         return false;
     }
