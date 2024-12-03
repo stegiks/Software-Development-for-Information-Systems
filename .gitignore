@@ -8,6 +8,11 @@
 !Makefile
 !README.md
 !.github/
+!.github/workflows/
+!.github/workflows/**
 !src/
+!/src/**
 !include/
-!tests
+!/include/**
+!tests/
+!tests/**
