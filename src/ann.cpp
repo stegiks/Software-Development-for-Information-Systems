@@ -104,6 +104,28 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
 }
 
 template <typename datatype>
+ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges, const std::vector<float>& filters){
+    if(points.size() != filters.size()){
+        throw std::invalid_argument("ANN: Number of points and filters do not match");
+    }
+
+    // Init an empty graph with number of points if no edges are provided
+    if(edges.empty() || edges.size() != points.size()){
+        this->G = new Graph(points.size(), true);
+    }
+    else{
+        this->G = new Graph(edges);
+    }
+
+    for(std::size_t i = 0; i < points.size(); i++){
+        this->node_to_point_map.push_back(points[i]);
+        this->node_to_filter_map.push_back(filters[i]);
+        this->point_to_node_map[points[i]] = (int)i;
+        this->filter_to_node_map[filters[i]].push_back((int)i);
+    }
+}
+
+template <typename datatype>
 ANN<datatype>::~ANN(){
     if(this->G != nullptr)
         delete this->G;
@@ -118,7 +140,7 @@ bool ANN<datatype>::checkErrorsGreedy(const int& start, int k, int upper_limit){
         return true;
     }
 
-    if(start < -1 || (size_t)start >= this->node_to_point_map.size()){
+    if(start < -1 || start >= (int)this->node_to_point_map.size()){
         std::cerr   << "Error : Start point is empty" << RESET << std::endl;
         throw std::invalid_argument("greedySearch: Start point is empty");
         return true;
@@ -176,10 +198,18 @@ bool ANN<datatype>::checkNeighbour(int a, int b){
     return this->G->isNeighbour(a,b);
 }
 
+// Fill the filter_to_start_node map for testing
+template <typename datatype>
+void ANN<datatype>::fillFilterToStartNode(std::unordered_map<float, int>& filter_to_start_node){
+    for(const auto& pair : filter_to_start_node){
+        this->filter_to_start_node[pair.first] = pair.second;
+    }
+}
+
 // Filtered Greedy Search algorithm to find the nearest neighbours with a filter value
 template <typename datatype>
 template <typename Compare>
-void ANN<datatype>::filteredGreedySearch(const int& start_node, const int& query_node, int k, int upper_limit, const float& filter_query_value, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare){
+void ANN<datatype>::filteredGreedySearch(const int& start_node, int k, int upper_limit, const float& filter_query_value, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare){
     // Error handling
     if(this->checkErrorsGreedy(start_node, k, upper_limit)){
         NNS.clear();
@@ -339,6 +369,16 @@ void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candid
 }
 
 template <typename datatype>
+bool ANN<datatype>::checkFilteredFindMedoid(std::size_t num_of_filters){
+    if(this->filter_to_node_map.size() != num_of_filters){
+        throw std::invalid_argument("filteredFindMedoid: Filter map size does not match the number of filters");
+        return false;
+    }
+
+    return true;
+}
+
+template <typename datatype>
 void ANN<datatype>::filteredFindMedoid(int tau){
     if(this->node_to_filter_map.empty()){
         throw std::invalid_argument("filteredFindMedoid: Filter map is empty");
@@ -486,6 +526,35 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 template class ANN<int>;
 template class ANN<float>;
 template class ANN<unsigned char>;
+
+// Explicit instantiation for filteredGreedySearch with the different datatypes
+template void ANN<int>::filteredGreedySearch<CompareVectors<int>>(
+    const int&, 
+    int, 
+    int, 
+    const float&, 
+    std::set<int, CompareVectors<int>>&, 
+    std::unordered_set<int>&, 
+    CompareVectors<int>&
+);
+template void ANN<float>::filteredGreedySearch<CompareVectors<float>>(
+    const int&, 
+    int, 
+    int, 
+    const float&, 
+    std::set<int, CompareVectors<float>>&, 
+    std::unordered_set<int>&, 
+    CompareVectors<float>&
+);
+template void ANN<unsigned char>::filteredGreedySearch<CompareVectors<unsigned char>>(
+    const int&, 
+    int, 
+    int, 
+    const float&, 
+    std::set<int, CompareVectors<unsigned char>>&, 
+    std::unordered_set<int>&, 
+    CompareVectors<unsigned char>&
+);
 
 // Explicit instantiation for greedySearch with the different datatypes
 template void ANN<int>::greedySearch<CompareVectors<int>>(
