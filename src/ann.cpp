@@ -87,12 +87,13 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
 }
 
 template <typename datatype>
-ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges, const std::vector<float>& filters){
-    std::size_t num_nodes = points.size();
-
+ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::vector<float>& filters){
     if(points.size() != filters.size()){
         throw std::invalid_argument("ANN: Number of points and filters do not match");
     }
+
+    // Init an empty graph with number of points
+    this->G = new Graph(points.size(), true);
 
     for(std::size_t i = 0; i < points.size(); i++){
         this->node_to_point_map.push_back(points[i]);
@@ -100,13 +101,6 @@ ANN<datatype>::ANN(const std::vector<std::vector<datatype>>& points, const std::
         this->point_to_node_map[points[i]] = (int)i;
         this->filter_to_node_map[filters[i]].push_back((int)i);
     }
-
-    if(edges.empty() || edges.size() != num_nodes){
-        this->G = new Graph(num_nodes);  // Initialize graph with number of points
-    }
-    else{
-        this->G = new Graph(edges);  // Initialize graph with edges
-    } 
 }
 
 template <typename datatype>

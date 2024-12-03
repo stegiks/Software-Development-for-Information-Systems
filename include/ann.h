@@ -35,7 +35,6 @@ private:
     bool checkErrorsRobust(const int &point, const float alpha, const int degree_bound);
     void calculateMedoid();
 
-    void filteredFindMedoid(int);
     void filteredPruning();
 public:
     std::vector<std::vector<datatype>> node_to_point_map;
@@ -45,7 +44,6 @@ public:
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
     ANN(const std::vector<std::vector<datatype>>& points, size_t reg);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<float>& filters);
-
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges, const std::vector<float>& filters);
 
     ~ANN();
@@ -55,8 +53,7 @@ public:
 
     // For testing
     bool checkFilteredFindMedoid(std::size_t num_of_filters);
-
-    void filteredFindMedoid(int tau);
+    void filteredFindMedoid(int);
 
     // Fill filter_to_start_node for testing
     void fillFilterToStartNode(std::unordered_map<float, int>& filter_to_start_node);
@@ -72,7 +69,6 @@ public:
     
     void Vamana(float, int, int);
     void filteredVamana(float, int, int, int);
-
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);

@@ -110,9 +110,7 @@ TEST(FilteredRobustPruneTest, FilteredFunctionality2){
     // Perform pruning with FILTERED enabled
     int start_node = 0;
     ann->robustPrune(start_node, candidate, 1.1, 2, FILTERED);
-
-
-    ann->printGraph();
+    
     // Check that the resulting graph matches the expected graph
     EXPECT_TRUE(ann->checkGraph(expected));
 }
