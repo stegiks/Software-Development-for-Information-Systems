@@ -35,7 +35,7 @@ private:
     bool checkErrorsRobust(const int &point, const float alpha, const int degree_bound);
     void calculateMedoid();
 
-    void filteredFindMedoid();
+    void filteredFindMedoid(int);
     void filteredPruning();
 public:
     std::vector<std::vector<datatype>> node_to_point_map;
@@ -44,7 +44,7 @@ public:
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
     ANN(const std::vector<std::vector<datatype>>& points, size_t reg);
-    ANN(const std::vector<std::vector<datatype>>& points, const std::vector<float>& filters);
+    ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges, const std::vector<float>& filters);
 
     ~ANN();
     bool checkGraph(std::vector<std::unordered_set<int>> edges);
@@ -53,13 +53,20 @@ public:
 
     template <typename Compare>
     void greedySearch(const int & start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+    template <typename Compare>
+    void filteredGreedySearch(const int & start_node, int k, int upper_limit,const float & filter, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
+    
+
     
     template <typename Compare>
     void robustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered);
     
-    void Vamana(float alpha, int L, int R,bool);
+    void Vamana(float, int, int);
+    void filteredVamana(float, int, int, int);
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);
+
+    void printGraph();
 };
 #endif // ann.h

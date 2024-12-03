@@ -167,7 +167,7 @@ void processing(const std::string& file_path_base, const std::string& file_path_
 
     std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
 
-    ann.Vamana(alpha, L, R, UNFILTERED);
+    ann.Vamana(alpha, L, R);
 
     std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
 

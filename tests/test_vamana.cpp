@@ -23,7 +23,7 @@ TEST(VamanaIndexingTest, DegreeBound1) {
     float alpha = 1.1;
 
     ANN<int> ann(points,edges);
-    ann.Vamana(alpha, L, R,UNFILTERED);
+    ann.Vamana(alpha, L, R);
 
     for (size_t i = 0; i < points.size(); ++i) {
         printf("Node %ld has degree %d\n", i, ann.countNeighbours(i));
@@ -58,7 +58,7 @@ TEST(VamanaIndexingTest, DegreeBound2) {
     int R = 2;           
 
     // Run the Vamana algorithm
-    ann.Vamana(alpha, L, R, UNFILTERED);
+    ann.Vamana(alpha, L, R);
 
     // Retrieve the graph structure by checking the neighbor count
     for (size_t i = 0; i < points.size(); ++i) {
@@ -91,7 +91,7 @@ TEST(VamanaIndexingTest, OffsetConditionTest) {
     float alpha = 1.1;
 
     ANN<int> ann(points, edges);
-    ann.Vamana(alpha, L, R, UNFILTERED);
+    ann.Vamana(alpha, L, R);
 
     // Check degrees to ensure Vamana respects the degree bound with the offset
     for (size_t i = 0; i < points.size(); ++i) {
