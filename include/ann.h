@@ -73,6 +73,8 @@ public:
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);
 
+    void saveGraph(const std::string &file_path);
+    void loadGraph(const std::string &file_path);
     void printGraph();
 };
 #endif // ann.h

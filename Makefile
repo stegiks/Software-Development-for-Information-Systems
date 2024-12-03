@@ -12,13 +12,13 @@ CC := gcc
 CXX := g++
 
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -O3 -march=native -flto # After -std=c++17 optimization flags
+CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -lstdc++fs  -O3 -march=native -flto # After -std=c++17 optimization flags
 
 # Path to local google test libraries
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
 
 # Arguments
-ARGS := ./siftsmall/siftsmall_base.fvecs ./siftsmall/siftsmall_query.fvecs fvecs ./siftsmall/siftsmall_groundtruth.ivecs 1 50 150
+ARGS := -b ./siftsmall/siftsmall_base.fvecs -q ./siftsmall/siftsmall_query.fvecs -f fvecs -gt ./siftsmall/siftsmall_groundtruth.ivecs -a 1 -R 50 -L 150 -load ./graphs/graph_1.000_50_150
 
 # Targets
 SRC_FILES := $(wildcard $(SRC)/*.cpp)

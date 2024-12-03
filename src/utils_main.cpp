@@ -1,5 +1,6 @@
 #include "utils_main.h"
 #include "ann.h"
+#include <iomanip>
 
 std::string findExtension(const std::string& file_path){
     std::size_t pos = file_path.find_last_of(".");
@@ -149,7 +150,7 @@ void parseDataVector(const std::string& path, std::vector<float>& vec_with_categ
 }
 
 template <typename datatype>
-void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L){
+void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph){
     
     std::vector<std::vector<datatype>> base = parseVecs<datatype>(file_path_base);
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
@@ -163,13 +164,19 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
-    ANN<datatype> ann(base, (size_t)R);
-
-    std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
-
-    ann.Vamana(alpha, L, R);
-
-    std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
+    ANN <datatype> *ann = new ANN<datatype>(base, (size_t)R);
+    
+    // Open the file to write the graph
+    if(file_path_graph.empty()){
+        std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
+        ann->Vamana(alpha, L, R);
+        std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
+    }
+    else{
+        // Load the graph from the file
+        ann->loadGraph(file_path_graph);
+        std::cout << GREEN << "Graph loaded successfully" << RESET << std::endl;
+    }
 
     // For every query point, find the results and compare with ground truth
     int total_correct_guesses = 0;
@@ -178,12 +185,12 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     for(std::size_t i = 0; i < query.size(); i++){
         int k = (int)gt[i].size();
 
-        CompareVectors<datatype> compare(ann.node_to_point_map,query[i]);
+        CompareVectors<datatype> compare(ann->node_to_point_map,query[i]);
         std::set<int, CompareVectors<datatype>> NNS(compare);
         std::unordered_set<int> Visited;
 
         // Call Greedy search to find the nearest neighbours
-        ann.greedySearch(ann.getMedoid(), k, L, NNS, Visited, compare);
+        ann->greedySearch(ann->getMedoid(), k, L, NNS, Visited, compare);
 
         // Search in the ground truth
         int correct = 0;
@@ -199,6 +206,17 @@ void processing(const std::string& file_path_base, const std::string& file_path_
         total_gt_size += k; 
     }
 
+    if (file_path_graph.empty()) {
+        std::ostringstream file_name_stream;
+        file_name_stream << "./graphs/graph_"
+                        << std::fixed << std::setprecision(3)
+                        << alpha << "_" << R << "_" << L;
+
+        ann->saveGraph(file_name_stream.str());
+        std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
+    }
+
+
     float total_recall = (float)total_correct_guesses / total_gt_size * 100;
     std::cout << "Total recall : " << total_recall << "%" << std::endl;
 }
@@ -209,6 +227,6 @@ template std::vector<std::vector<int>> parseVecs<int>(const std::string& file_pa
 template std::vector<std::vector<unsigned char>> parseVecs<unsigned char>(const std::string& file_path);
 
 // Explicit instantiation of the processing function
-template void processing<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L);
-template void processing<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L);
-template void processing<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L);
+template void processing<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+template void processing<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+template void processing<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);

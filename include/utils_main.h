@@ -32,6 +32,6 @@ std::vector<std::vector<datatype>> parseVecs(const std::string& file_path);
 
 // Main function that processes the input arguments and makes the Vamana Graph
 template <typename datatype>
-void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L);
+void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
 
 #endif // utils.h

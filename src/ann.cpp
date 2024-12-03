@@ -1,5 +1,7 @@
 #include "ann.h"
 #include "defs.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 
 // Prune the set to retain only the k closest points
 template <typename datatype>
@@ -322,57 +324,6 @@ void ANN<datatype>::greedySearch(const int& start, int k, int upper_limit, std::
     this->pruneSet(NNS, difference, k);
 }
 
-// template <typename datatype>
-// template <typename Compare>
-// void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered){
-    
-//     // Error handling
-//     if(this->checkErrorsRobust(point, alpha, degree_bound))
-//         return;
-    
-//     std::vector<int> neighbours;
-//     this->neighbourNodes(point, neighbours);
-
-//     for(const auto& neighbour : neighbours){
-//         candidate_set.insert(neighbour);
-//     }
-
-//     // Remove point p from candidate_set and prune all its neighbours
-//     candidate_set.erase(point);
-//     this->G->removeNeighbours(point);
-
-//     while(true){
-
-//         if(candidate_set.size() == 0)
-//             break;
-
-//         int closest_point = *(candidate_set.begin());
-
-//         // Closest point would have been removed from candidate set in alpha comparison step anyway
-//         candidate_set.erase(closest_point);
-//         this->G->addEdge(point, closest_point);
-
-//         if(this->G->countNeighbours(point) == degree_bound)
-//             break;
-
-//         for(auto it = candidate_set.begin(); it != candidate_set.end();){
-//             const auto& element = *it;
-
-//             auto x = this->node_to_point_map[closest_point];
-//             auto y = this->node_to_point_map[element];
-//             auto z = this->node_to_point_map[point];
-//             std::size_t dim = y.size();
-
-//             if(alpha * float(calculateDistance(x, y, dim)) <= float(calculateDistance(y, z, dim))){
-//                 it = candidate_set.erase(it);
-//             }
-//             else{
-//                 it++;
-//             }
-//         }
-//     }
-// }
-
 template <typename datatype>
 template <typename Compare>
 void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered){
@@ -673,6 +624,70 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau){
 
     }
   
+}
+
+template <typename datatype>
+void ANN<datatype>::saveGraph(const std::string& file_path) {
+    namespace fs = std::filesystem;
+    if (fs::exists(file_path)) {
+        std::cerr << "Error: File \"" << file_path << "\" already exists.\n";
+        throw std::invalid_argument("saveGraph: File already exists");
+    }
+
+    std::ofstream out_file(file_path, std::ios::binary);
+    if (!out_file) {
+        std::cerr << "Error: Could not create file \"" << file_path << "\".\n";
+        throw std::invalid_argument("saveGraph: Could not open file");
+    }
+
+    Graph* G = this->G;
+    const std::size_t num_nodes = G->getNumberOfNodes();
+    out_file.write(reinterpret_cast<const char*>(&num_nodes), sizeof(num_nodes));
+
+    for (std::size_t i = 0; i < num_nodes; ++i) {
+        const auto& neighbours = G->getNeighbours(i);
+        const std::size_t num_neighbours = neighbours.size();
+        out_file.write(reinterpret_cast<const char*>(&i), sizeof(i));
+        out_file.write(reinterpret_cast<const char*>(&num_neighbours), sizeof(num_neighbours));
+
+        for (const int neighbour : neighbours) {
+            out_file.write(reinterpret_cast<const char*>(&neighbour), sizeof(neighbour));
+        }
+    }
+
+    out_file.close();
+}
+
+template <typename datatype>
+void ANN<datatype>::loadGraph(const std::string& file_path) {
+    std::ifstream in_file(file_path, std::ios::binary);
+    if (!in_file) {
+        std::cerr << "Error: Could not open file \"" << file_path << "\".\n";
+        throw std::invalid_argument("loadGraph: Could not open file");
+    }
+
+    std::size_t num_nodes;
+    in_file.read(reinterpret_cast<char*>(&num_nodes), sizeof(num_nodes));
+
+    // Clear the old graph if necessary
+    if (this->G != nullptr) {
+        delete this->G;
+    }
+    this->G = new Graph(num_nodes, true);
+
+    for (std::size_t i = 0; i < num_nodes; ++i) {
+        std::size_t node, num_neighbours;
+        in_file.read(reinterpret_cast<char*>(&node), sizeof(node));
+        in_file.read(reinterpret_cast<char*>(&num_neighbours), sizeof(num_neighbours));
+
+        for (std::size_t j = 0; j < num_neighbours; ++j) {
+            int neighbour;
+            in_file.read(reinterpret_cast<char*>(&neighbour), sizeof(neighbour));
+            this->G->addEdge(node, neighbour);
+        }
+    }
+
+    in_file.close();
 }
 
 // Explicit instantiation of ANN class for datatype int, float and unsigned char
