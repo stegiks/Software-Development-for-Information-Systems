@@ -44,6 +44,8 @@ public:
     ANN(const std::vector<std::vector<datatype>>& points);
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges);
     ANN(const std::vector<std::vector<datatype>>& points, size_t reg);
+    ANN(const std::vector<std::vector<datatype>>& points, const std::vector<float>& filters);
+
     ANN(const std::vector<std::vector<datatype>>& points, const std::vector<std::unordered_set<int>>& edges, const std::vector<float>& filters);
 
     ~ANN();
@@ -51,11 +53,18 @@ public:
     bool checkNeighbour(int a, int b);
     const int& getMedoid();
 
+    // For testing
+    bool checkFilteredFindMedoid(std::size_t num_of_filters);
+
+    void filteredFindMedoid(int tau);
+
+    // Fill filter_to_start_node for testing
+    void fillFilterToStartNode(std::unordered_map<float, int>& filter_to_start_node);
+
     template <typename Compare>
     void greedySearch(const int & start_node, int k, int upper_limit, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
     template <typename Compare>
     void filteredGreedySearch(const int & start_node, int k, int upper_limit,const float & filter, std::set<int, Compare>& NNS, std::unordered_set<int>& Visited, CompareVectors<datatype>& compare);
-    
 
     
     template <typename Compare>
@@ -63,6 +72,7 @@ public:
     
     void Vamana(float, int, int);
     void filteredVamana(float, int, int, int);
+
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);
