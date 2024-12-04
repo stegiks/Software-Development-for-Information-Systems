@@ -224,12 +224,22 @@ void ANN<datatype>::filteredGreedySearch(const int& start_node, int k, int upper
     }
 
     // If the start_node has value -1, then this means we are checking for a unfiltered query.
-    // In this case, we have to use all the start nodes for every subgraph.
+    // In this case, we are performing a "quick" filtered greedy search to find the nearest node in every sub graph.
     std::set<int, Compare> difference(compare);
     if(start_node == -1){
+        std::set<int, Compare> temp_nns(compare);
+        std::unordered_set<int> temp_visited;
+        int temp_upper_limit = upper_limit < 2 ? upper_limit : 2;
+        
         for(const auto& pair : this->filter_to_start_node){
-            NNS.insert(pair.second);
-            difference.insert(pair.second);
+            temp_nns.clear();
+            temp_visited.clear();
+            temp_nns.insert(pair.second);
+            this->filteredGreedySearch(pair.second, 1, temp_upper_limit, pair.first, temp_nns, temp_visited, compare);
+
+            // Insert the node that greedy found to NNS and difference
+            NNS.insert(*(temp_nns.begin()));
+            difference.insert(*(temp_nns.begin()));
         }
     }
     else{
