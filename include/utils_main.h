@@ -4,13 +4,7 @@
 #include <iostream>
 #include <string>
 #include "defs.h"
-
-template <typename datatype>
-struct Query{
-    float query_id;
-    float category_value;
-    std::vector<datatype> point;
-};
+#include "parse.h"
 
 // Function to find the extension of a file
 std::string findExtension(const std::string& file_path);
@@ -18,20 +12,14 @@ std::string findExtension(const std::string& file_path);
 // Function to validate the extension of the files
 bool validateExtension(const std::string& extension_base, const std::string& extension_query, const std::string& extension_gt, const std::string& file_format);
 
-// Function to parse the base vectors for filtered search
-template <typename datatype>
-void parseDataVector(const std::string& path, std::vector<float>& vec_with_category_values, std::vector<std::vector<datatype>>& vec_with_points);
+// Calculate the ground truth for the given query
+void calculateGroundTruth(const std::vector<Query>& queries, const std::vector<float>& base_cat_filter_values, const std::vector<std::vector<float>>& base_points, std::vector<std::vector<std::pair<float, int>>>& ground_truth);
 
-// Function to parse query vectors for filtered search
-template <typename datatype>
-void parseQueryVector(const std::string& path, std::vector<Query<datatype>>& queries);
+// Process files with bin format and run the Vamana algorithm
+void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
 
-// Function to parse vectors from a file
+// Process files with vec format and run the Vamana algorithm
 template <typename datatype>
-std::vector<std::vector<datatype>> parseVecs(const std::string& file_path);
-
-// Main function that processes the input arguments and makes the Vamana Graph
-template <typename datatype>
-void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+void processVecFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
 
 #endif // utils.h

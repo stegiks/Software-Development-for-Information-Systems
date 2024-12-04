@@ -22,10 +22,10 @@ bool validateExtension(const std::string& file_path_base, const std::string& fil
         return false;
     }
 
-    if(extension_base != "ivecs" && extension_base != "fvecs" && extension_base != "bvecs"){
-        std::cerr   << "Error : Base and Query files have an invalid extension" << RESET << std::endl;
-        std::cerr << BLUE << "Valid extensions are : ivecs, fvecs, bvecs" << RESET << std::endl;
-        throw std::invalid_argument("Base and Query files have an invalid extension");
+    if(extension_base != "ivecs" && extension_base != "fvecs" && extension_base != "bvecs" && extension_base != "bin"){
+        std::cerr   << "Error : Base vector file has an invalid extension" << RESET << std::endl;
+        std::cerr << BLUE << "Valid extensions are : ivecs, fvecs, bvecs, bin" << RESET << std::endl;
+        throw std::invalid_argument("Base vector file has an invalid extension");
         return false;
     }
 
@@ -35,122 +35,180 @@ bool validateExtension(const std::string& file_path_base, const std::string& fil
         return false;
     }
 
-    if(extension_gt != "ivecs"){
-        std::cerr   << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
-        std::cerr << BLUE << "Valid extension is : ivecs" << RESET << std::endl;
-        throw std::invalid_argument("Ground truth file has an invalid extension");
-        return false;
+    if(extension_base != "bin"){
+        if(extension_gt != "ivecs"){
+            std::cerr   << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
+            std::cerr << BLUE << "Valid extension for provided arguments is : ivecs" << RESET << std::endl;
+            throw std::invalid_argument("Ground truth file has an invalid extension");
+            return false;
+        }
+    }
+    else{
+        if(extension_gt != "bin"){
+            std::cerr   << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
+            std::cerr << BLUE << "Valid extension for provided arguments is : bin" << RESET << std::endl;
+            throw std::invalid_argument("Ground truth file has an invalid extension");
+            return false;
+        }
     }
 
     return true;
 }
 
-template <typename datatype>
-std::vector<std::vector<datatype>> parseVecs(const std::string& file_path){
-    // Open file in binary mode
-    std::ifstream file(file_path, std::ios::binary);
+// Function that calculates the ground truth vectors for the queries
+void calculateGroundTruth(const std::vector<Query>& queries, 
+                            const std::vector<float>& base_cat_filter_values, 
+                            const std::vector<std::vector<float>>& base_points,
+                            std::vector<std::vector<std::pair<float, int>>>& ground_truth){
 
-    if(!file.is_open()){
-        throw std::runtime_error("Could not open file " + file_path);
+    // Preallocate memory
+    ground_truth.clear();
+    ground_truth.resize(queries.size());
+
+    std::size_t n = queries.size();
+    for(std::size_t i = 0; i < n; i++){
+        const Query& query = queries[i];
+        std::vector<std::pair<float, int>> points_for_x_filter;
+
+        // Calculate the distance of the query point to all the points in the base that have the same category value
+        // If category value is -1, calculate the distance to all the points in the base
+        std::size_t m = base_cat_filter_values.size();
+        for(std::size_t j = 0; j < m; j++){
+            if(query.category_value == -1 || query.category_value == base_cat_filter_values[j]){
+                float distance = calculateDistance(query.point, base_points[j], query.point.size());
+                points_for_x_filter.emplace_back(std::make_pair(distance, j));
+            }
+        }
+
+        // Sort according to the distance
+        std::sort(points_for_x_filter.begin(), points_for_x_filter.end(), 
+        [](const std::pair<float, int>& a, const std::pair<float, int>& b){ // Lambda function
+            return a.first < b.first;
+        });
+
+        // Keep maximum 100 points
+        int size_gt = (int)std::min(points_for_x_filter.size(), (size_t)100);
+        ground_truth[i].assign(points_for_x_filter.begin(), points_for_x_filter.begin() + size_gt);
     }
+}
 
-    std::vector<std::vector<datatype>> vec;
-    while(true){
+// TODO : Implement the function processBinFormat
+void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph){
+    
+    std::vector<std::vector<float>> base;
+    std::vector<float> base_category_values;
+    parseDataVector(file_path_base, base_category_values, base);
+
+    std::vector<Query> queries;
+    parseQueryVector(file_path_query, queries);
+
+    std::vector<std::vector<int>> gt;
+    // If the ground truth file is not provided, calculate the ground truth and save it to a file
+    if(file_path_gt.empty()){
+        std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
+        std::vector<std::vector<std::pair<float, int>>> temp_gt;
+        calculateGroundTruth(queries, base_category_values, base, temp_gt);
         
-        // Read the dimension of the vector
-        int dim;
-        file.read((char*)&dim, sizeof(int));
-        if(!file) break;    // Break if we reached EOF
-
-        // Read the vector
-        std::vector<datatype> vec_temp(dim);
-        file.read((char*)vec_temp.data(), dim * sizeof(datatype));
+        std::ofstream file("./groundtruth/groundtruth.bin", std::ios::binary);
         if(!file){
-            throw std::runtime_error("Error reading vector");
+            throw std::runtime_error("Could not open file to save ground truth");
         }
 
-        // Using std::move to avoid copying the vector 
-        // because we are done with vec_temp
-        vec.push_back(std::move(vec_temp));
-    }
+        u_int32_t num_queries = (u_int32_t)queries.size();
+        file.write((char*)&num_queries, sizeof(u_int32_t));
 
-    file.close();
-    return vec;
-}
+        for(const auto& query_gt : temp_gt){
+            u_int32_t num_points = (u_int32_t)query_gt.size();
+            file.write((char*)&num_points, sizeof(u_int32_t));
 
-template <typename datatype>
-void parseQueryVector(const std::string& path, std::vector<Query<datatype>>& queries){
-    std::ifstream file(path, std::ios::binary);
-
-    if(!file){
-        throw std::runtime_error("Could not open file");
-    }
-
-    u_int32_t num_queries;
-    file.read((char*)&num_queries, sizeof(u_int32_t));
-
-    // We don't want to keep all the points because we don't care about timestamps queries.
-    // So we don't care for query_id 2 and 3. That's why we don't preallocate memory for the points.
-    for(u_int32_t i = 0; i < num_queries; i++){
-        float query_id;
-        float category_value;
-
-        // Read first 8 bytes and then skip the next 8 bytes
-        file.read((char*)&query_id, sizeof(float));
-        file.read((char*)&category_value, sizeof(float));
-        file.seekg(2 * sizeof(float), std::ios::cur);
-
-        // Read the 100 dimension float vector
-        std::vector<datatype> point(100);
-        file.read((char*)point.data(), 100 * sizeof(datatype));
-
-        // Use std::move to avoid copying the vector
-        if(query_id == 0 || query_id == 1){
-            Query<datatype> query;
-            query.query_id = query_id;
-            query.category_value = category_value;
-            query.point = std::move(point);
-            queries.push_back(std::move(query));
+            for(const auto& [distance, index] : query_gt){
+                file.write((char*)&index, sizeof(u_int32_t));
+            }
         }
+
+        file.close();
+        parseGroundTruth("./groundtruth/groundtruth.bin", gt);
+    }
+    else{
+        parseGroundTruth(file_path_gt, gt);
     }
 
-    file.close();
+    // Check if the files are parsed successfully
+    if(base.empty() || queries.empty() || gt.empty()){
+        throw std::runtime_error("Parsing failed and returned empty vectors");
+    }
+
+    std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
+
+    // Init ANN class and run Vamana algorithm
+    ANN<float> ann(base, base_category_values);
+
+    // Open the file to write the graph
+    if(file_path_graph.empty()){
+        std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
+        ann.filteredVamana(alpha, L, R, 5);
+        std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl; 
+    }
+    else{
+        // Load the graph from the file
+        ann.loadGraph(file_path_graph);
+        std::cout << GREEN << "Graph loaded successfully" << RESET << std::endl;
+
+        // Run filtered find medoid to fill filter_to_start_node used in filteredGreedySearch
+        ann.filteredFindMedoid(5);
+    }
+
+    int total_correct_guesses = 0;
+    int total_gt_size = 0;
+
+    for(std::size_t i = 0; i < queries.size(); i++){
+        int k = (int)gt[i].size();
+
+        CompareVectors<float> compare(ann.node_to_point_map, queries[i].point);
+        std::set<int, CompareVectors<float>> NNS(compare);
+        std::unordered_set<int> Visited;
+
+        // Call filtered Greedy
+        if(queries[i].query_id == 0){
+            ann.filteredGreedySearch(-1, k, L, queries[i].category_value, NNS, Visited, compare);
+        }
+        else{
+            int start_node = ann.getStartNode(queries[i].category_value);
+            if(start_node == -1) continue;
+            ann.filteredGreedySearch(start_node, k, L, queries[i].category_value, NNS, Visited, compare);
+        }
+
+        // Search in the ground truth
+        int correct = 0;
+        for(const int& index : gt[i]){
+            if(NNS.find(index) != NNS.end()){
+                correct++;
+            }
+        }
+        
+        float recall = (float)correct / k * 100;
+        std::cout << "Query " << i << " with category value " << queries[i].category_value << " recall : " << recall << "%" << std::endl;
+        
+        total_correct_guesses += correct;
+        total_gt_size += k;
+    }
+
+    float total_recall = (float)total_correct_guesses / total_gt_size * 100;
+    std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
+
+    if(file_path_graph.empty()){
+        std::ostringstream file_name_stream;
+        file_name_stream << "./graphs/graph_filtered_"
+                        << std::fixed << std::setprecision(3)
+                        << alpha << "_" << R << "_" << L;
+        
+        ann.saveGraph(file_name_stream.str());
+        std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
+    }
 }
 
 template <typename datatype>
-void parseDataVector(const std::string& path, std::vector<float>& vec_with_category_values, std::vector<std::vector<datatype>>& vec_with_points){
-    std::ifstream file(path, std::ios::binary);
-
-    if(!file){
-        throw std::runtime_error("Could not open file");
-    }
-
-    u_int32_t num_points;
-    file.read((char*)&num_points, sizeof(u_int32_t));
-    std::cout << "Number of points: " << num_points << std::endl;
-
-    // Preallocate memory for the vectors, because we know the size
-    vec_with_category_values.resize(num_points);
-    // ! This may need a change because we may not know the dimension of the point vector.
-    // ! In the datasets that we have, the dimension is always 100.
-    vec_with_points.resize(num_points, std::vector<float>(100));
-
-    for(u_int32_t i = 0; i < num_points; i++){
-        // Categorical filter
-        file.read((char*)&vec_with_category_values[i], sizeof(float));
-
-        // Skip the 4 bytes used for timestamp
-        file.seekg(4, std::ios::cur);
-
-        // Read the 100 dimension float vector
-        file.read((char*)vec_with_points[i].data(), 100 * sizeof(float));
-    }
-
-    file.close();
-}
-
-template <typename datatype>
-void processing(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph){
+void processVecFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph){
     
     std::vector<std::vector<datatype>> base = parseVecs<datatype>(file_path_base);
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
@@ -164,17 +222,18 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
-    ANN <datatype> *ann = new ANN<datatype>(base, (size_t)R);
+    ANN<datatype> ann(base, (size_t)R);
+    std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
     
     // Open the file to write the graph
     if(file_path_graph.empty()){
-        std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
-        ann->Vamana(alpha, L, R);
+        std::cout << BLUE << "Running Vamana algorithm to create the graph" << RESET << std::endl;
+        ann.Vamana(alpha, L, R);
         std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
     }
     else{
         // Load the graph from the file
-        ann->loadGraph(file_path_graph);
+        ann.loadGraph(file_path_graph);
         std::cout << GREEN << "Graph loaded successfully" << RESET << std::endl;
     }
 
@@ -185,12 +244,12 @@ void processing(const std::string& file_path_base, const std::string& file_path_
     for(std::size_t i = 0; i < query.size(); i++){
         int k = (int)gt[i].size();
 
-        CompareVectors<datatype> compare(ann->node_to_point_map,query[i]);
+        CompareVectors<datatype> compare(ann.node_to_point_map, query[i]);
         std::set<int, CompareVectors<datatype>> NNS(compare);
         std::unordered_set<int> Visited;
 
         // Call Greedy search to find the nearest neighbours
-        ann->greedySearch(ann->getMedoid(), k, L, NNS, Visited, compare);
+        ann.greedySearch(ann.getMedoid(), k, L, NNS, Visited, compare);
 
         // Search in the ground truth
         int correct = 0;
@@ -206,27 +265,21 @@ void processing(const std::string& file_path_base, const std::string& file_path_
         total_gt_size += k; 
     }
 
+    float total_recall = (float)total_correct_guesses / total_gt_size * 100;
+    std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
+
     if (file_path_graph.empty()) {
         std::ostringstream file_name_stream;
         file_name_stream << "./graphs/graph_"
                         << std::fixed << std::setprecision(3)
                         << alpha << "_" << R << "_" << L;
 
-        ann->saveGraph(file_name_stream.str());
+        ann.saveGraph(file_name_stream.str());
         std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
     }
-
-
-    float total_recall = (float)total_correct_guesses / total_gt_size * 100;
-    std::cout << "Total recall : " << total_recall << "%" << std::endl;
 }
 
-// Explicit instantiation of the parseVecs function
-template std::vector<std::vector<float>> parseVecs<float>(const std::string& file_path);
-template std::vector<std::vector<int>> parseVecs<int>(const std::string& file_path);
-template std::vector<std::vector<unsigned char>> parseVecs<unsigned char>(const std::string& file_path);
-
 // Explicit instantiation of the processing function
-template void processing<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
-template void processing<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
-template void processing<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+template void processVecFormat<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+template void processVecFormat<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+template void processVecFormat<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);

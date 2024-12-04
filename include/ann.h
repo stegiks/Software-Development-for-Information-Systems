@@ -53,7 +53,8 @@ public:
 
     // For testing
     bool checkFilteredFindMedoid(std::size_t num_of_filters);
-    void filteredFindMedoid(int);
+    int getStartNode(float filter);
+    void filteredFindMedoid(int tau);
 
     // Fill filter_to_start_node for testing
     void fillFilterToStartNode(std::unordered_map<float, int>& filter_to_start_node);
@@ -67,8 +68,8 @@ public:
     template <typename Compare>
     void robustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered);
     
-    void Vamana(float, int, int);
-    void filteredVamana(float, int, int, int);
+    void Vamana(float alpha, int L, int R);
+    void filteredVamana(float alpha, int L, int R, int tau);
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);

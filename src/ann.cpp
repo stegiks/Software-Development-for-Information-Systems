@@ -391,6 +391,20 @@ bool ANN<datatype>::checkFilteredFindMedoid(std::size_t num_of_filters){
 }
 
 template <typename datatype>
+int ANN<datatype>::getStartNode(float filter){
+    if(this->filter_to_start_node.empty()){
+        this->filteredFindMedoid(5);
+    }
+
+    auto it = this->filter_to_start_node.find(filter);
+    if(it == this->filter_to_start_node.end()){
+        return -1;
+    }
+
+    return it->second;
+}
+
+template <typename datatype>
 void ANN<datatype>::filteredFindMedoid(int tau){
     if(this->node_to_filter_map.empty()){
         throw std::invalid_argument("filteredFindMedoid: Filter map is empty");
@@ -594,7 +608,7 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau){
 
         // Return k closest points to Xq (point) and then with robust find "better" neighbours
         this->filteredGreedySearch(temporary_point, 1, L, filter, NNS, Visited, compare);
-        
+
         // Transform Visited to a set with a custom comparator
         std::set<int, CompareVectors<datatype>> VisitedRobust(compare);
         for(auto it = Visited.begin(); it != Visited.end(); it++){
@@ -617,13 +631,13 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau){
                 for(auto k : neighbours_j){
                     temp.insert(k);
                 }
+
+                neighbours_j.clear();
                 this->robustPrune(j, temp, alpha, R, FILTERED);
             }
         }
-
-
+        neighbours.clear();
     }
-  
 }
 
 template <typename datatype>

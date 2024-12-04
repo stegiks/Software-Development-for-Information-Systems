@@ -7,11 +7,42 @@
 #include "utils_main.h"
 #include "ann.h"
 
+void printHelp(){
+    std::cout << BLUE << "Usage: " << RESET << CYAN << "./main " << RESET
+              << YELLOW << "-b " << MAGENTA << "<file_path_base> " << RESET
+              << YELLOW << "-q " << MAGENTA << "<file_path_query> " << RESET
+              << YELLOW << "-f " << MAGENTA << "<extension> " << RESET
+              << "[" << YELLOW << "-gt " << MAGENTA << "<file_path_gt>" << RESET << "] "
+              << YELLOW << "-a " << MAGENTA << "<alpha> " << RESET
+              << YELLOW << "-R " << MAGENTA << "<Regularity> " << RESET
+              << YELLOW << "-L " << MAGENTA << "<L(upper limit)> " << RESET
+              << "[" << YELLOW << "-load " << MAGENTA << "<file_path_graph>" << RESET << "]"
+              << std::endl << std::endl;
+
+    std::cout << GREEN << "Options:" << RESET << std::endl;
+    std::cout << YELLOW << "  -b " << RESET << MAGENTA << "<file_path_base> " << RESET 
+              << ": Path to the base vectors file." << std::endl;
+    std::cout << YELLOW << "  -q " << RESET << MAGENTA << "<file_path_query> " << RESET 
+              << ": Path to the query vectors file." << std::endl;
+    std::cout << YELLOW << "  -f " << RESET << MAGENTA << "<extension> " << RESET 
+              << ": File format extension (e.g., fvecs, bin)." << std::endl;
+    std::cout << YELLOW << "  -gt " << RESET << MAGENTA << "<file_path_gt> " << RESET 
+              << ": (Optional) Path to ground truth vectors file." << std::endl;
+    std::cout << YELLOW << "  -a " << RESET << MAGENTA << "<alpha> " << RESET 
+              << ": Alpha parameter for search." << std::endl;
+    std::cout << YELLOW << "  -R " << RESET << MAGENTA << "<Regularity> " << RESET 
+              << ": Regularity parameter (R)." << std::endl;
+    std::cout << YELLOW << "  -L " << RESET << MAGENTA << "<L(upper limit)> " << RESET 
+              << ": Upper limit (L) for search." << std::endl;
+    std::cout << YELLOW << "  -load " << RESET << MAGENTA << "<file_path_graph> " << RESET 
+              << ": (Optional) Path to precomputed graph file." << std::endl << std::endl;
+
+    std::cout << RED << "Example:" << RESET << std::endl;
+    std::cout << CYAN << "  ./main -b base.bin -q query.bin -f bin -a 1.1 -R 10 -L 100" << RESET << std::endl;
+}
+
 void printUsage() {
-    std::cerr << BLUE << "Usage : " << RESET 
-              << "./main -b <file_path_base> -q <file_path_query> -f <extension> "
-              << "-gt <file_path_gt> -a <alpha> -R <Regularity> -L <L(upper limit)> [-load <file_path_graph>]" 
-              << std::endl;
+    std::cerr << "Wrong usage of the program. Find more information with ./main -h or ./main --help" << std::endl;
 }
 
 std::map<std::string, std::string> parseArguments(int argc, char** argv) {
@@ -43,8 +74,12 @@ void checkRequiredFlags(const std::map<std::string, std::string>& args, const st
 
 int main(int argc, char** argv) {
     try {
+        if( argc == 2 && (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") ){
+            printHelp();
+            return 0;
+        }
+
         if (argc < 15) {  // Minimum required arguments: 7 flags, each with a value
-            std::cerr << RED << "Error : Not enough arguments" << RESET << std::endl;
             printUsage();
             throw std::invalid_argument("Not enough arguments");
         }
@@ -52,7 +87,7 @@ int main(int argc, char** argv) {
         auto args = parseArguments(argc, argv);
 
         // Define the set of required flags
-        std::set<std::string> requiredFlags = {"-b", "-q", "-f", "-gt", "-a", "-R", "-L"};
+        std::set<std::string> requiredFlags = { "-b", "-q", "-f", "-a", "-R", "-L" };
 
         // Check if all required flags are present
         checkRequiredFlags(args, requiredFlags);
@@ -61,13 +96,16 @@ int main(int argc, char** argv) {
         std::string file_path_base = args["-b"];
         std::string file_path_query = args["-q"];
         std::string file_format = args["-f"];
-        std::string file_path_gt = args["-gt"];
         float alpha = std::stof(args["-a"]);
         int R = std::stoi(args["-R"]);
         int L = std::stoi(args["-L"]);
 
+        // Check optional flags
+        std::string file_path_gt = "";
+        if (args.find("-gt") != args.end()) {
+            file_path_gt = args["-gt"];
+        }
 
-        // Check if optional flag is present
         std::string file_path_graph = "";
         if (args.find("-load") != args.end()) {
             file_path_graph = args["-load"];
@@ -80,25 +118,34 @@ int main(int argc, char** argv) {
 
         // Call processing function based on the file format
         if (file_format == "fvecs") {
-            processing<float>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
-        } else if (file_format == "ivecs") {
-            processing<int>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
-        } else if (file_format == "bvecs") {
-            processing<unsigned char>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
-        } else {
+            processVecFormat<float>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+        }
+        else if (file_format == "ivecs") {
+            processVecFormat<int>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+        }
+        else if (file_format == "bvecs") {
+            processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+        }
+        else if (file_format == "bin") {
+            processBinFormat(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+        }
+        else {
             std::cerr << RED << "Error : Invalid extension" << RESET << std::endl;
             printUsage();
             throw std::invalid_argument("Invalid extension");
         }
 
         std::cout << GREEN << "Processing completed successfully" << RESET << std::endl;
-    } catch (const std::invalid_argument& e) {
+    }
+    catch (const std::invalid_argument& e) {
         std::cerr << RED << "Error : " << e.what() << RESET << std::endl;
         return 1;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         std::cerr << RED << "Error : " << e.what() << RESET << std::endl;
         return 1;
-    } catch (...) {
+    }
+    catch (...) {
         std::cerr << RED << "Error : Unknown exception" << RESET << std::endl;
         return 1;
     }
