@@ -8,7 +8,8 @@
 #include "ann.h"
 
 void printHelp(){
-    std::cout << BLUE << "Usage: " << RESET << CYAN << "./main " << RESET
+    std::cout << GREEN << "Usage: " << std::endl << RESET 
+              << CYAN << "./main " << RESET
               << YELLOW << "-b " << MAGENTA << "<file_path_base> " << RESET
               << YELLOW << "-q " << MAGENTA << "<file_path_query> " << RESET
               << YELLOW << "-f " << MAGENTA << "<extension> " << RESET
@@ -17,27 +18,30 @@ void printHelp(){
               << YELLOW << "-R " << MAGENTA << "<Regularity> " << RESET
               << YELLOW << "-L " << MAGENTA << "<L(upper limit)> " << RESET
               << "[" << YELLOW << "-load " << MAGENTA << "<file_path_graph>" << RESET << "]"
+              << "[" << YELLOW << "-algo " << MAGENTA << "<algorithm>" << RESET << "]"
               << std::endl << std::endl;
 
     std::cout << GREEN << "Options:" << RESET << std::endl;
-    std::cout << YELLOW << "  -b " << RESET << MAGENTA << "<file_path_base> " << RESET 
+    std::cout  << "  -b " << "<file_path_base> " 
               << ": Path to the base vectors file." << std::endl;
-    std::cout << YELLOW << "  -q " << RESET << MAGENTA << "<file_path_query> " << RESET 
+    std::cout << "  -q " << "<file_path_query> " 
               << ": Path to the query vectors file." << std::endl;
-    std::cout << YELLOW << "  -f " << RESET << MAGENTA << "<extension> " << RESET 
+    std::cout << "  -f " << "<extension> " 
               << ": File format extension (e.g., fvecs, bin)." << std::endl;
-    std::cout << YELLOW << "  -gt " << RESET << MAGENTA << "<file_path_gt> " << RESET 
+    std::cout << "  -gt " << "<file_path_gt> " 
               << ": (Optional) Path to ground truth vectors file." << std::endl;
-    std::cout << YELLOW << "  -a " << RESET << MAGENTA << "<alpha> " << RESET 
+    std::cout << "  -a " << "<alpha> " 
               << ": Alpha parameter for search." << std::endl;
-    std::cout << YELLOW << "  -R " << RESET << MAGENTA << "<Regularity> " << RESET 
+    std::cout << "  -R " << "<Regularity> " 
               << ": Regularity parameter (R)." << std::endl;
-    std::cout << YELLOW << "  -L " << RESET << MAGENTA << "<L(upper limit)> " << RESET 
+    std::cout << "  -L " << "<L(upper limit)> " 
               << ": Upper limit (L) for search." << std::endl;
-    std::cout << YELLOW << "  -load " << RESET << MAGENTA << "<file_path_graph> " << RESET 
+    std::cout << "  -load " << "<file_path_graph> " 
               << ": (Optional) Path to precomputed graph file." << std::endl << std::endl;
+    std::cout << "  -algo " << "stitch/filter " 
+              << ": (Optional) Algorithm to use for filtered datasets. Default is FilteredVamana." << std::endl << std::endl;
 
-    std::cout << RED << "Example:" << RESET << std::endl;
+    std::cout << GREEN << "Example:" << RESET << std::endl;
     std::cout << CYAN << "  ./main -b base.bin -q query.bin -f bin -a 1.1 -R 10 -L 100" << RESET << std::endl;
 }
 
@@ -127,7 +131,7 @@ int main(int argc, char** argv) {
             processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
         }
         else if (file_format == "bin") {
-            processBinFormat(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+            processBinFormat(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph, args["-algo"]);
         }
         else {
             std::cerr << RED << "Error : Invalid extension" << RESET << std::endl;

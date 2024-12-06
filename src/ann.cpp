@@ -580,6 +580,56 @@ void ANN<datatype>::filteredPruning(){
     }
 }
 
+template <typename datatype>
+void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_stitched){
+    this->G->enforceRegular(0);
+
+    ANN<datatype> *small_graph;
+
+    // Iterate over all the filters and create a subgraph for each filter
+    for(const auto& pair : this->filter_to_node_map){
+        // float filter = pair.first;
+        // std::cout << "Filter : " << filter << std::endl;
+       
+        // Create a vector of points for the filter
+        std::vector<std::vector<datatype>> small_points;
+        for(int node : pair.second){
+            small_points.push_back(this->node_to_point_map[node]);
+        }
+
+        // Create a new graph for the filter
+        small_graph = new ANN<datatype>(small_points);
+        small_graph->Vamana(alpha, L_small, R_small);
+        
+        // Stitch the small graph to the main graph 
+        for(size_t i = 0; i < small_points.size(); i++){
+            int node = pair.second[i];
+            std::vector<int> neighbours;
+            small_graph->neighbourNodes(int(i), neighbours);
+
+            for(int neighbour : neighbours){
+                this->G->addEdge(node, pair.second[neighbour]);
+            }
+        }
+
+        delete small_graph;
+
+    }
+
+    // For each vertice in the graph run robust prune
+    for(size_t i = 0; i < this->node_to_point_map.size(); i++){
+        std::set<int> candidate_set;
+        std::vector<int> neighbours;
+        this->neighbourNodes(i, neighbours);
+
+        for(int neighbour : neighbours){
+            candidate_set.insert(neighbour);
+        }
+
+        this->robustPrune(i, candidate_set, alpha, R_stitched, FILTERED);
+    }
+
+}
 
 template <typename datatype>
 void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau){

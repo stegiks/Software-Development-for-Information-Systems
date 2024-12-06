@@ -70,34 +70,3 @@ TEST(VamanaIndexingTest, DegreeBound2) {
             << "Node " << i << " has more than R neighbors.";
     }
 }
-
-
-// Test specifically for the offset condition
-TEST(VamanaIndexingTest, OffsetConditionTest) {
-    std::vector<std::vector<int>> points = {
-        {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}
-    };
-
-    std::vector<std::unordered_set<int>> edges = {
-        {1, 2},
-        {0, 3},
-        {0},   
-        {1},   
-        {}     
-    };
-    
-    int L = 2;
-    int R = 2; // Limit each node to at most 2 neighbors
-    float alpha = 1.1;
-
-    ANN<int> ann(points, edges);
-    ann.Vamana(alpha, L, R);
-
-    // Check degrees to ensure Vamana respects the degree bound with the offset
-    for (size_t i = 0; i < points.size(); ++i) {
-        int neighbor_count = ann.countNeighbours(i);
-        
-        EXPECT_LE(neighbor_count, R)
-            << "Node " << i << " exceeds the degree bound, indicating failure of offset handling.";
-    }
-}

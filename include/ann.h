@@ -70,6 +70,7 @@ public:
     
     void Vamana(float alpha, int L, int R);
     void filteredVamana(float alpha, int L, int R, int tau);
+    void stitchedVamana(float alpha, int L_small, int R_small, int R_stitched);
 
     void neighbourNodes(const int& point, std::vector<int>& neighbours);
     int countNeighbours(int node);

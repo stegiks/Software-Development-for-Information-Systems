@@ -1,6 +1,7 @@
 #include "utils_main.h"
 #include "ann.h"
 #include <iomanip>
+#include <filesystem>
 
 std::string findExtension(const std::string& file_path){
     std::size_t pos = file_path.find_last_of(".");
@@ -93,7 +94,7 @@ void calculateGroundTruth(const std::vector<Query>& queries,
 }
 
 // TODO : Implement the function processBinFormat
-void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph){
+void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph, const std::string& algo){
     
     std::vector<std::vector<float>> base;
     std::vector<float> base_category_values;
@@ -146,8 +147,14 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     // Open the file to write the graph
     if(file_path_graph.empty()){
         std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
-        ann.filteredVamana(alpha, L, R, 5);
-        std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl; 
+        if(algo == "stitch"){
+            ann.stitchedVamana(alpha, L, R, 5);
+            std::cout << GREEN << "Stitched Vamana Graph executed successfully" << RESET << std::endl;
+        }
+        else{
+            ann.filteredVamana(alpha, L, R, 5);
+            std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl;
+        }
     }
     else{
         // Load the graph from the file
@@ -196,15 +203,24 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     float total_recall = (float)total_correct_guesses / total_gt_size * 100;
     std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
 
-    if(file_path_graph.empty()){
+    if (file_path_graph.empty()) {
         std::ostringstream file_name_stream;
-        file_name_stream << "./graphs/graph_filtered_"
+        std::string algorithm_used = algo == "stitch" ? "stitched" : "filtered";
+        file_name_stream << "./graphs/graph_" << algorithm_used << "_"
                         << std::fixed << std::setprecision(3)
                         << alpha << "_" << R << "_" << L;
-        
-        ann.saveGraph(file_name_stream.str());
-        std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
+
+        std::string file_name = file_name_stream.str();
+
+        // Check if the file already exists
+        if (std::filesystem::exists(file_name)) {
+            std::cout << YELLOW << "File already exists: " << file_name << RESET << std::endl;
+        } else {
+            ann.saveGraph(file_name);
+            std::cout << GREEN << "Graph saved successfully: " << file_name << RESET << std::endl;
+        }
     }
+
 }
 
 template <typename datatype>
@@ -274,8 +290,15 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
                         << std::fixed << std::setprecision(3)
                         << alpha << "_" << R << "_" << L;
 
-        ann.saveGraph(file_name_stream.str());
-        std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
+        std::string file_name = file_name_stream.str();
+
+        // Check if the file already exists
+        if (std::filesystem::exists(file_name)) {
+            std::cout << YELLOW << "File already exists: " << file_name << RESET << std::endl;
+        } else {
+            ann.saveGraph(file_name);
+            std::cout << GREEN << "Graph saved successfully: " << file_name << RESET << std::endl;
+        }
     }
 }
 

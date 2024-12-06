@@ -52,6 +52,9 @@ test: $(BIN)/tests
 run: $(BIN)/main
 	time $(BIN)/main $(ARGS)
 
+run_stitch: $(BIN)/main
+	time $(BIN)/main $(ARGS) -algo stitch
+
 # Clean
 clean:
 	rm -rf $(BUILD)/* $(BIN)/* *.txt *.out
