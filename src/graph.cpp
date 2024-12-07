@@ -117,6 +117,8 @@ void Graph::enforceRegular(int R){
     for(std::size_t i = 0; i < this->adj_list.size(); i++){
         std::unordered_set<int>& neighbours = this->getNeighbours(i);
 
+        // Set upper limit to be the minimum of R and number of nodes
+
         // If node has more than R neighbors, remove random edges
         if(neighbours.size() > static_cast<size_t>(R)){
             std::vector<int> neighboursVec(neighbours.begin(), neighbours.end());
@@ -126,8 +128,10 @@ void Graph::enforceRegular(int R){
             }
         }
 
+        size_t upper_limit = this->adj_list.size() < static_cast<size_t>(R) ? this->adj_list.size()-1 : static_cast<size_t>(R);
+        
         // If node has fewer than R neighbors, add random edges
-        while(neighbours.size() < static_cast<size_t>(R)){
+        while(neighbours.size() < upper_limit){
             std::size_t j = rand() % this->adj_list.size();
             if(i != j && neighbours.find(j) == neighbours.end()){
                 neighbours.insert(j);

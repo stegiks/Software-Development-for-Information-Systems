@@ -148,7 +148,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     if(file_path_graph.empty()){
         std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
         if(algo == "stitch"){
-            ann.stitchedVamana(alpha, L, R, 5);
+            ann.stitchedVamana(alpha, L, R, 100);
             std::cout << GREEN << "Stitched Vamana Graph executed successfully" << RESET << std::endl;
         }
         else{
@@ -244,7 +244,7 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
     // Open the file to write the graph
     if(file_path_graph.empty()){
         std::cout << BLUE << "Running Vamana algorithm to create the graph" << RESET << std::endl;
-        ann.Vamana(alpha, L, R);
+        ann.Vamana(alpha, L, R, true);
         std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
     }
     else{

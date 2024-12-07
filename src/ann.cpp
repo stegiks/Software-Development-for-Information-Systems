@@ -479,16 +479,20 @@ const int& ANN<datatype>::getMedoid(){
 }
 
 template <typename datatype>
-void ANN<datatype>::Vamana(float alpha, int L, int R){
+void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose){
     
     this->G->enforceRegular(R);
 
-    std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
+    if(verbose){
+        std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
+    }
 
     // Calculate medoid of dataset
     this->calculateMedoid();
 
-    std::cout << GREEN << "Medoid calculated" << RESET << std::endl;
+    if(verbose){
+        std::cout << GREEN << "Medoid calculated" << RESET << std::endl;
+    }
 
     // Get a random permutation of 1 to n
     std::vector<int> perm;
@@ -587,10 +591,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
     ANN<datatype> *small_graph;
 
     // Iterate over all the filters and create a subgraph for each filter
-    for(const auto& pair : this->filter_to_node_map){
-        // float filter = pair.first;
-        // std::cout << "Filter : " << filter << std::endl;
-       
+    for(const auto& pair : this->filter_to_node_map){       
         // Create a vector of points for the filter
         std::vector<std::vector<datatype>> small_points;
         for(int node : pair.second){
