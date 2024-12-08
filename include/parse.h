@@ -10,7 +10,6 @@
 // Parse for bin extension
 void parseDataVector(const std::string& path, std::vector<float>& vec_with_category_values, std::vector<std::vector<float>>& vec_with_points);
 void parseQueryVector(const std::string& path, std::vector<float>& query_filters, std::vector<std::vector<float>>& query_points);
-void parseGroundTruth(const std::string& path, std::vector<std::vector<int>>& ground_truth);
 
 // Parse for fvecs, ivecs and bvecs extensions
 template <typename datatype>

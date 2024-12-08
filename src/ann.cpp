@@ -37,6 +37,22 @@ void ANN<datatype>::neighbourNodes(const int& point, std::vector<int>& neighbour
 }
 
 template <typename datatype>
+bool ANN<datatype>::checkFilters(){
+    for(size_t i = 0; i < this->node_to_point_map.size(); i++){
+        // Get the neighbors of the point
+        std::vector<int> neighbours;
+        this->neighbourNodes(i, neighbours);
+        for(int neighbour : neighbours){
+            if(this->node_to_filter_map[i] != this->node_to_filter_map[neighbour]){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+template <typename datatype>
 int ANN<datatype>::countNeighbours(int node){
     return this->G->countNeighbours(node);
 }

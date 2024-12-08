@@ -64,30 +64,6 @@ void parseQueryVector(const std::string& path, std::vector<float>& query_filters
     file.close();
 }
 
-// Parse ground truth vectors from groundtruth.bin
-void parseGroundTruth(const std::string& path, std::vector<std::vector<int>>& ground_truth){
-    std::ifstream file(path, std::ios::binary);
-    if(!file){
-        throw std::runtime_error("Could not open file");
-    }
-
-    u_int32_t num_queries;
-    file.read((char*)&num_queries, sizeof(u_int32_t));
-
-    ground_truth.clear();
-    ground_truth.resize(num_queries);
-
-    for(u_int32_t i = 0; i < num_queries; i++){
-        u_int32_t num_points;
-        file.read((char*)&num_points, sizeof(u_int32_t));
-
-        ground_truth[i].resize(num_points);
-        file.read((char*)ground_truth[i].data(), num_points * sizeof(int));
-    }
-
-    file.close();
-}
-
 template <typename datatype>
 std::vector<std::vector<datatype>> parseVecs(const std::string& file_path){
     // Open file in binary mode

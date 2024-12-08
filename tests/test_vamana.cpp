@@ -70,3 +70,68 @@ TEST(VamanaIndexingTest, DegreeBound2) {
             << "Node " << i << " has more than R neighbors.";
     }
 }
+
+TEST(FilteredVamana, BasicFunct){
+
+    std::vector<std::vector<int>> points = {{1, 2}, {1, 0}, {2, 3}, {1, -5}, {3, -5}, {6, 2}};
+    std::vector<std::unordered_set<int>> edges = {
+        {},
+        {3},
+        {1, 5},
+        {},
+        {3},
+        {4}
+    };
+
+    std::vector<int> start = {2, 3};
+    std::vector<float> filters = {1.2, 1.0, 1.0, 1.0, 1.0, 1.0};
+    ANN<int>* ann = new ANN<int>(points, edges, filters);
+
+    int L = 3;
+    int R = 2;
+    float alpha = 1.1;
+    
+    ann->filteredVamana(alpha, L, R, 2);
+
+    for (size_t i = 0; i < points.size(); ++i) {
+        EXPECT_LE(ann->countNeighbours(i), R) << "Degree bound exceeded for node " << i;
+
+        EXPECT_TRUE(ann->checkFilters());
+    }
+
+    delete ann;
+}
+
+
+TEST(StitchedVamana, BasicFunct){
+    std::vector<std::vector<int>> points = {{1, 2}, {1, 0}, {2, 3}, {1, -5}, {3, -5}, {6, 2}};
+    std::vector<std::unordered_set<int>> edges = {
+        {},
+        {3},
+        {1, 5},
+        {},
+        {3},
+        {4}
+    };
+
+    std::vector<int> start = {2, 3};
+    std::vector<float> filters = {1.2, 1.0, 1.0, 1.0, 1.0, 1.0};
+    ANN<int>* ann = new ANN<int>(points, edges, filters);
+
+    int L_small = 4;
+    int R_small = 2;
+    int R_stitched = 4;
+    float alpha = 1.1;
+    
+    ann->stitchedVamana(alpha, L_small, R_small, R_stitched);
+
+    for (size_t i = 0; i < points.size(); ++i) {
+        EXPECT_LE(ann->countNeighbours(i), R_stitched) << "Degree bound exceeded for node " << i;
+
+        EXPECT_TRUE(ann->checkFilters());
+    }
+
+    delete ann;
+
+
+}

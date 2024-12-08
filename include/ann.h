@@ -78,5 +78,6 @@ public:
     void saveGraph(const std::string &file_path);
     void loadGraph(const std::string &file_path);
     void printGraph();
+    bool checkFilters();
 };
 #endif // ann.h

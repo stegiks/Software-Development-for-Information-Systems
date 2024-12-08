@@ -132,23 +132,21 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
                 throw std::runtime_error("Could not open file to save ground truth");
             }
 
-            u_int32_t num_queries = (u_int32_t)queries.size();
-            file.write((char*)&num_queries, sizeof(u_int32_t));
             for(const auto& query_gt : temp_gt){
-                u_int32_t num_points = (u_int32_t)query_gt.size();
-                file.write((char*)&num_points, sizeof(u_int32_t));
+                int dimension = (int)query_gt.size();
+                file.write((char*)&dimension, sizeof(int));
 
                 for(const auto& [distance, index] : query_gt){
-                    file.write((char*)&index, sizeof(u_int32_t));
+                    file.write((char*)&index, sizeof(int));
                 }
             }
 
             file.close();
         }
-        parseGroundTruth(file_name, gt);
+        gt = parseVecs<int>(file_name);
     }
     else{
-        parseGroundTruth(file_path_gt, gt);
+        gt = parseVecs<int>(file_path_gt);
     }
 
     // Check if the files are parsed successfully
@@ -265,20 +263,17 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
             throw std::runtime_error("Could not open file to save ground truth");
         }
 
-        u_int32_t num_queries = (u_int32_t)query.size();
-        file.write((char*)&num_queries, sizeof(u_int32_t));
-
         for(const auto& query_gt : temp_gt){
-            u_int32_t num_points = (u_int32_t)query_gt.size();
-            file.write((char*)&num_points, sizeof(u_int32_t));
+            int dimension = (int)query_gt.size();
+            file.write((char*)&dimension, sizeof(int));
 
             for(const auto& [distance, index] : query_gt){
-                file.write((char*)&index, sizeof(u_int32_t));
+                file.write((char*)&index, sizeof(int));
             }
         }
 
         file.close();
-        parseGroundTruth(file_name, gt);
+        gt = parseVecs<int>(file_name);
     }
     else{
         gt = parseVecs<int>(file_path_gt);
