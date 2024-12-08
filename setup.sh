@@ -6,4 +6,4 @@ cd build
 cmake ..
 make
 cd ../..
-mkdir build bin
+mkdir build bin data groundtruth graphs

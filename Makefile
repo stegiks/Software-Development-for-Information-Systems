@@ -19,8 +19,9 @@ LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_mai
 
 # Arguments
 ARGS := -b ./data/siftsmall_base.fvecs -q ./data/siftsmall_query.fvecs -f fvecs -gt ./data/siftsmall_groundtruth.ivecs -a 1 -R 50 -L 150
-ARGS_FILT := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -gt ./data/dummy-groundtruth.bin -a 1 -R 50 -L 150
-ARGS_STITCH := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -gt ./data/dummy-groundtruth.bin -a 1 -R 64 -L 100
+ARGS_FILT := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -a 1 -R 50 -L 150 -algo filter
+ARGS_STITCH := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -a 1 -R 70 -L 150 -algo stitch
+
 # Targets
 SRC_FILES := $(wildcard $(SRC)/*.cpp)
 OBJ_FILES := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(SRC_FILES))
@@ -54,10 +55,10 @@ run: $(BIN)/main
 	time $(BIN)/main $(ARGS)
 
 run_filter: $(BIN)/main
-	time $(BIN)/main $(ARGS_FILT) -algo filter
+	time $(BIN)/main $(ARGS_FILT)
 
 run_stitch: $(BIN)/main
-	time $(BIN)/main $(ARGS_FILT) -algo stitch
+	time $(BIN)/main $(ARGS_STITCH)
 
 # Clean
 clean:
@@ -66,6 +67,12 @@ clean:
 # Valgrind
 valgrind: $(BIN)/main
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS)
+
+valgrind_filter: $(BIN)/main
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS_FILT)
+
+valgrind_stitch: $(BIN)/main
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS_STITCH)
 
 valgrind_tests: $(BIN)/tests
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/tests
