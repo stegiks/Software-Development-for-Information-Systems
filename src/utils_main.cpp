@@ -36,6 +36,10 @@ bool validateExtension(const std::string& file_path_base, const std::string& fil
         return false;
     }
 
+    if(extension_gt.empty()){
+        return true;
+    }
+    
     if(extension_base != "bin"){
         if(extension_gt != "ivecs"){
             std::cerr   << "Error : Ground truth file has an invalid extension" << RESET << std::endl;
@@ -57,10 +61,12 @@ bool validateExtension(const std::string& file_path_base, const std::string& fil
 }
 
 // Function that calculates the ground truth vectors for the queries
-void calculateGroundTruth(const std::vector<Query>& queries, 
-                            const std::vector<float>& base_cat_filter_values, 
-                            const std::vector<std::vector<float>>& base_points,
-                            std::vector<std::vector<std::pair<float, int>>>& ground_truth){
+template <typename datatype>
+void calculateGroundTruth(const std::vector<std::vector<datatype>>& queries, 
+                            const std::vector<std::vector<datatype>>& base_points,
+                            std::vector<std::vector<std::pair<float, int>>>& ground_truth,
+                            const std::vector<float>* query_category_values,
+                            const std::vector<float>* base_category_values){
 
     // Preallocate memory
     ground_truth.clear();
@@ -68,15 +74,18 @@ void calculateGroundTruth(const std::vector<Query>& queries,
 
     std::size_t n = queries.size();
     for(std::size_t i = 0; i < n; i++){
-        const Query& query = queries[i];
+        const auto& query = queries[i];
         std::vector<std::pair<float, int>> points_for_x_filter;
+
+        // Find the category value of the query
+        float query_category_value = query_category_values == nullptr ? -1 : (*query_category_values)[i];
 
         // Calculate the distance of the query point to all the points in the base that have the same category value
         // If category value is -1, calculate the distance to all the points in the base
-        std::size_t m = base_cat_filter_values.size();
+        std::size_t m = base_points.size();
         for(std::size_t j = 0; j < m; j++){
-            if(query.category_value == -1 || query.category_value == base_cat_filter_values[j]){
-                float distance = calculateDistance(query.point, base_points[j], query.point.size());
+            if(query_category_value == -1 || (base_category_values != nullptr && (*base_category_values)[j] == query_category_value)){
+                float distance = calculateDistance(query, base_points[j], query.size());
                 points_for_x_filter.emplace_back(std::make_pair(distance, j));
             }
         }
@@ -93,24 +102,30 @@ void calculateGroundTruth(const std::vector<Query>& queries,
     }
 }
 
-// TODO : Implement the function processBinFormat
 void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph, const std::string& algo){
     
     std::vector<std::vector<float>> base;
     std::vector<float> base_category_values;
-    parseDataVector(file_path_base, base_category_values, base);
+    std::vector<std::vector<float>> queries;
+    std::vector<float> query_category_values;
 
-    std::vector<Query> queries;
-    parseQueryVector(file_path_query, queries);
+    parseDataVector(file_path_base, base_category_values, base);
+    parseQueryVector(file_path_query, query_category_values, queries);
 
     std::vector<std::vector<int>> gt;
     // If the ground truth file is not provided, calculate the ground truth and save it to a file
     if(file_path_gt.empty()){
         std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
         std::vector<std::vector<std::pair<float, int>>> temp_gt;
-        calculateGroundTruth(queries, base_category_values, base, temp_gt);
-        
-        std::ofstream file("./groundtruth/groundtruth.bin", std::ios::binary);
+        calculateGroundTruth(queries, base, temp_gt, &query_category_values, &base_category_values);
+
+        std::ostringstream file_name_stream;
+        std::string algorithm_used = "filtered";
+        std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
+        file_name_stream << "./groundtruth/groundtruth" << dataset_name << "_" << algorithm_used << ".bin";
+        std::string file_name = file_name_stream.str();
+
+        std::ofstream file(file_name, std::ios::binary);
         if(!file){
             throw std::runtime_error("Could not open file to save ground truth");
         }
@@ -128,7 +143,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         }
 
         file.close();
-        parseGroundTruth("./groundtruth/groundtruth.bin", gt);
+        parseGroundTruth(file_name, gt);
     }
     else{
         parseGroundTruth(file_path_gt, gt);
@@ -148,7 +163,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     if(file_path_graph.empty()){
         std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
         if(algo == "stitch"){
-            ann.stitchedVamana(alpha, L, R, 100);
+            ann.stitchedVamana(alpha, L, (int)(R / 2), R);
             std::cout << GREEN << "Stitched Vamana Graph executed successfully" << RESET << std::endl;
         }
         else{
@@ -171,18 +186,18 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     for(std::size_t i = 0; i < queries.size(); i++){
         int k = (int)gt[i].size();
 
-        CompareVectors<float> compare(ann.node_to_point_map, queries[i].point);
+        CompareVectors<float> compare(ann.node_to_point_map, queries[i]);
         std::set<int, CompareVectors<float>> NNS(compare);
         std::unordered_set<int> Visited;
 
         // Call filtered Greedy
-        if(queries[i].query_id == 0){
-            ann.filteredGreedySearch(-1, k, L, queries[i].category_value, NNS, Visited, compare);
+        if(query_category_values[i] == -1){
+            ann.filteredGreedySearch(-1, k, L, -1, NNS, Visited, compare);
         }
         else{
-            int start_node = ann.getStartNode(queries[i].category_value);
+            int start_node = ann.getStartNode(query_category_values[i]);
             if(start_node == -1) continue;
-            ann.filteredGreedySearch(start_node, k, L, queries[i].category_value, NNS, Visited, compare);
+            ann.filteredGreedySearch(start_node, k, L, query_category_values[i], NNS, Visited, compare);
         }
 
         // Search in the ground truth
@@ -194,7 +209,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         }
         
         float recall = (float)correct / k * 100;
-        std::cout << "Query " << i << " with category value " << queries[i].category_value << " recall : " << recall << "%" << std::endl;
+        std::cout << "Query " << i << " with category value " << query_category_values[i] << " recall : " << recall << "%" << std::endl;
         
         total_correct_guesses += correct;
         total_gt_size += k;
@@ -206,7 +221,8 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     if (file_path_graph.empty()) {
         std::ostringstream file_name_stream;
         std::string algorithm_used = algo == "stitch" ? "stitched" : "filtered";
-        file_name_stream << "./graphs/graph_" << algorithm_used << "_"
+        std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
+        file_name_stream << "./graphs/graph" << dataset_name << "_" << algorithm_used << "_"
                         << std::fixed << std::setprecision(3)
                         << alpha << "_" << R << "_" << L;
 
@@ -228,7 +244,43 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
     
     std::vector<std::vector<datatype>> base = parseVecs<datatype>(file_path_base);
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
-    std::vector<std::vector<int>> gt = parseVecs<int>(file_path_gt);
+    std::vector<std::vector<int>> gt;
+
+    // If the ground truth file is not provided, calculate the ground truth and save it to a file
+    if(file_path_gt.empty()){
+        std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
+        std::vector<std::vector<std::pair<float, int>>> temp_gt;
+        calculateGroundTruth(query, base, temp_gt);
+
+        std::ostringstream file_name_stream;
+        std::string algorithm_used = "unfiltered";
+        std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
+        file_name_stream << "./groundtruth/groundtruth" << dataset_name << "_" << algorithm_used << ".bin";
+        std::string file_name = file_name_stream.str();
+
+        std::ofstream file(file_name, std::ios::binary);
+        if(!file){
+            throw std::runtime_error("Could not open file to save ground truth");
+        }
+
+        u_int32_t num_queries = (u_int32_t)query.size();
+        file.write((char*)&num_queries, sizeof(u_int32_t));
+
+        for(const auto& query_gt : temp_gt){
+            u_int32_t num_points = (u_int32_t)query_gt.size();
+            file.write((char*)&num_points, sizeof(u_int32_t));
+
+            for(const auto& [distance, index] : query_gt){
+                file.write((char*)&index, sizeof(u_int32_t));
+            }
+        }
+
+        file.close();
+        parseGroundTruth(file_name, gt);
+    }
+    else{
+        gt = parseVecs<int>(file_path_gt);
+    }
 
     // Check if the files are parsed successfully
     if(base.empty() || query.empty() || gt.empty()){
@@ -286,7 +338,9 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
 
     if (file_path_graph.empty()) {
         std::ostringstream file_name_stream;
-        file_name_stream << "./graphs/graph_"
+        std::string algorithm_used = "unfiltered";
+        std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
+        file_name_stream << "./graphs/graph" << dataset_name << "_" << algorithm_used << "_"
                         << std::fixed << std::setprecision(3)
                         << alpha << "_" << R << "_" << L;
 

@@ -13,7 +13,8 @@ std::string findExtension(const std::string& file_path);
 bool validateExtension(const std::string& extension_base, const std::string& extension_query, const std::string& extension_gt, const std::string& file_format);
 
 // Calculate the ground truth for the given query
-void calculateGroundTruth(const std::vector<Query>& queries, const std::vector<float>& base_cat_filter_values, const std::vector<std::vector<float>>& base_points, std::vector<std::vector<std::pair<float, int>>>& ground_truth);
+template <typename datatype>
+void calculateGroundTruth(const std::vector<std::vector<datatype>>& queries, const std::vector<std::vector<datatype>>& base_points, std::vector<std::vector<std::pair<float, int>>>& ground_truth, const std::vector<float>* query_category_values = nullptr, const std::vector<float>* base_category_values = nullptr);
 
 // Process files with bin format and run the Vamana algorithm
 void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph, const std::string& algo);

@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
             return 0;
         }
 
-        if (argc < 15) {  // Minimum required arguments: 7 flags, each with a value
+        if (argc < 13) {  // Minimum required arguments: 7 flags, each with a value
             printUsage();
             throw std::invalid_argument("Not enough arguments");
         }

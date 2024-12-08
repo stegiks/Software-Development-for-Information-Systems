@@ -29,7 +29,7 @@ void parseDataVector(const std::string& path, std::vector<float>& vec_with_categ
     file.close();
 }
 
-void parseQueryVector(const std::string& path, std::vector<Query>& queries){
+void parseQueryVector(const std::string& path, std::vector<float>& query_filters, std::vector<std::vector<float>>& query_points){
     std::ifstream file(path, std::ios::binary);
 
     if(!file){
@@ -56,11 +56,8 @@ void parseQueryVector(const std::string& path, std::vector<Query>& queries){
 
         // Use std::move to avoid copying the vector
         if(query_id == 0 || query_id == 1){
-            Query query;
-            query.query_id = query_id;
-            query.category_value = category_value;
-            query.point = std::move(point);
-            queries.push_back(std::move(query));
+            query_filters.push_back(category_value);
+            query_points.push_back(std::move(point));
         }
     }
 

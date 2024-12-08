@@ -18,8 +18,9 @@ CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -lstdc++fs  -O3 -march=native -flt
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
 
 # Arguments
-ARGS := -b ./data/siftsmall_base.fvecs -q ./data/siftsmall_query.fvecs -f fvecs -gt ./data/siftsmall_groundtruth.ivecs -a 1 -R 50 -L 150 -load ./graphs/graph_1.000_50_150
+ARGS := -b ./data/siftsmall_base.fvecs -q ./data/siftsmall_query.fvecs -f fvecs -gt ./data/siftsmall_groundtruth.ivecs -a 1 -R 50 -L 150
 ARGS_FILT := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -gt ./data/dummy-groundtruth.bin -a 1 -R 50 -L 150
+ARGS_STITCH := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -gt ./data/dummy-groundtruth.bin -a 1 -R 64 -L 100
 # Targets
 SRC_FILES := $(wildcard $(SRC)/*.cpp)
 OBJ_FILES := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(SRC_FILES))
