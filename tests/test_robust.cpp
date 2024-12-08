@@ -189,6 +189,7 @@ TEST_F(RobustPruneTest, EmptySet) {
     std::vector<std::vector<int>> empty = {};
     ann = new ANN<int>(empty, edges);
     EXPECT_TRUE(true);
+    delete ann;
 }
 
 
@@ -230,6 +231,8 @@ TEST(FilteredRobustPruneTest, BasicFunctionality){
     ann->robustPrune(start_node, candidate, 1.1, 5, FILTERED);
 
     EXPECT_TRUE(ann->checkGraph(expected));
+
+    delete ann;
 }
 
 // Test basic pruning functionality
@@ -269,5 +272,6 @@ TEST(FilteredRobustPruneTest, FilteredFunctionality1){
     ann->robustPrune(start_node, candidate, 1.1, 5, FILTERED);
 
     EXPECT_TRUE(ann->checkGraph(expected));
+    delete ann;
 }
 

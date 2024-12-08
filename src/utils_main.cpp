@@ -115,9 +115,6 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     std::vector<std::vector<int>> gt;
     // If the ground truth file is not provided, calculate the ground truth and save it to a file
     if(file_path_gt.empty()){
-        std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
-        std::vector<std::vector<std::pair<float, int>>> temp_gt;
-        calculateGroundTruth(queries, base, temp_gt, &query_category_values, &base_category_values);
 
         std::ostringstream file_name_stream;
         std::string algorithm_used = "filtered";
@@ -125,24 +122,29 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         file_name_stream << "./groundtruth/groundtruth" << dataset_name << "_" << algorithm_used << ".bin";
         std::string file_name = file_name_stream.str();
 
-        std::ofstream file(file_name, std::ios::binary);
-        if(!file){
-            throw std::runtime_error("Could not open file to save ground truth");
-        }
-
-        u_int32_t num_queries = (u_int32_t)queries.size();
-        file.write((char*)&num_queries, sizeof(u_int32_t));
-
-        for(const auto& query_gt : temp_gt){
-            u_int32_t num_points = (u_int32_t)query_gt.size();
-            file.write((char*)&num_points, sizeof(u_int32_t));
-
-            for(const auto& [distance, index] : query_gt){
-                file.write((char*)&index, sizeof(u_int32_t));
+        if(!std::filesystem::exists(file_name)){
+            std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
+            std::vector<std::vector<std::pair<float, int>>> temp_gt;
+            calculateGroundTruth(queries, base, temp_gt, &query_category_values, &base_category_values);
+        
+            std::ofstream file(file_name, std::ios::binary);
+            if(!file){
+                throw std::runtime_error("Could not open file to save ground truth");
             }
-        }
 
-        file.close();
+            u_int32_t num_queries = (u_int32_t)queries.size();
+            file.write((char*)&num_queries, sizeof(u_int32_t));
+            for(const auto& query_gt : temp_gt){
+                u_int32_t num_points = (u_int32_t)query_gt.size();
+                file.write((char*)&num_points, sizeof(u_int32_t));
+
+                for(const auto& [distance, index] : query_gt){
+                    file.write((char*)&index, sizeof(u_int32_t));
+                }
+            }
+
+            file.close();
+        }
         parseGroundTruth(file_name, gt);
     }
     else{
