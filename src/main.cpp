@@ -37,7 +37,7 @@ void printHelp(){
     std::cout << "  -L " << "<L(upper limit)> " 
               << ": Upper limit (L) for search." << std::endl;
     std::cout << "  -load " << "<file_path_graph> " 
-              << ": (Optional) Path to precomputed graph file." << std::endl << std::endl;
+              << ": (Optional) Path to precomputed graph file." << std::endl;
     std::cout << "  -algo " << "stitch/filter " 
               << ": (Optional) Algorithm to use for filtered datasets. Default is FilteredVamana." << std::endl << std::endl;
 
