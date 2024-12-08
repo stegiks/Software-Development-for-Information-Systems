@@ -73,19 +73,23 @@ TEST(VamanaIndexingTest, DegreeBound2) {
 
 TEST(FilteredVamana, BasicFunct){
 
-    std::vector<std::vector<int>> points = {{1, 2}, {1, 0}, {2, 3}, {1, -5}, {3, -5}, {6, 2}};
-    std::vector<std::unordered_set<int>> edges = {
-        {},
-        {3},
-        {1, 5},
-        {},
-        {3},
-        {4}
+    std::vector<std::vector<float>> points = {
+        {0.0, 0.0}, {1.0, 1.0}, {2.0, 2.0}, {3.0, 3.0}, {4.0, 4.0}, {5.0, 5.6}, {10.0, 11.0}
     };
 
-    std::vector<int> start = {2, 3};
-    std::vector<float> filters = {1.2, 1.0, 1.0, 1.0, 1.0, 1.0};
-    ANN<int>* ann = new ANN<int>(points, edges, filters);
+    // Predefined edges to control connectivity explicitly (assuming undirected edges)
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 2, 3, 4, 5},
+        {0, 2, 3, 4, 5},
+        {0, 1, 3, 4, 5},
+        {0, 1, 2, 4, 5},
+        {0, 1, 2, 3, 5},
+        {0, 1, 2, 3, 4, 6},
+        {5}
+    };
+
+    std::vector<float> filters = {1.2, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    ANN<float>* ann = new ANN<float>(points, edges, filters);
 
     int L = 3;
     int R = 2;
@@ -104,19 +108,23 @@ TEST(FilteredVamana, BasicFunct){
 
 
 TEST(StitchedVamana, BasicFunct){
-    std::vector<std::vector<int>> points = {{1, 2}, {1, 0}, {2, 3}, {1, -5}, {3, -5}, {6, 2}};
-    std::vector<std::unordered_set<int>> edges = {
-        {},
-        {3},
-        {1, 5},
-        {},
-        {3},
-        {4}
+    std::vector<std::vector<float>> points = {
+        {0.0, 0.0}, {1.0, 1.0}, {2.0, 2.0}, {3.0, 3.0}, {4.0, 4.0}, {5.0, 5.6}, {10.0, 11.0}
     };
 
-    std::vector<int> start = {2, 3};
-    std::vector<float> filters = {1.2, 1.0, 1.0, 1.0, 1.0, 1.0};
-    ANN<int>* ann = new ANN<int>(points, edges, filters);
+    // Predefined edges to control connectivity explicitly (assuming undirected edges)
+    std::vector<std::unordered_set<int>> edges = {
+        {1, 2, 3, 4, 5},
+        {0, 2, 3, 4, 5},
+        {0, 1, 3, 4, 5},
+        {0, 1, 2, 4, 5},
+        {0, 1, 2, 3, 5},
+        {0, 1, 2, 3, 4, 6},
+        {5}
+    };
+
+    std::vector<float> filters = {1.2, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    ANN<float>* ann = new ANN<float>(points, edges, filters);
 
     int L_small = 4;
     int R_small = 2;

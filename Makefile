@@ -74,7 +74,7 @@ valgrind_filter: $(BIN)/main
 valgrind_stitch: $(BIN)/main
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/main $(ARGS_STITCH)
 
-valgrind_tests: $(BIN)/tests
+valgrind_test: $(BIN)/tests
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/tests
 
 all: clean test

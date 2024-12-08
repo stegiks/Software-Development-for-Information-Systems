@@ -46,7 +46,7 @@ void printHelp(){
 }
 
 void printUsage() {
-    std::cerr << "Wrong usage of the program. Find more information with ./main -h or ./main --help" << std::endl;
+    std::cerr << "Wrong usage of the program. Find more information with ./bin/main -h or ./bin/main --help" << std::endl;
 }
 
 std::map<std::string, std::string> parseArguments(int argc, char** argv) {

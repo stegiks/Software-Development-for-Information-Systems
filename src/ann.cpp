@@ -578,9 +578,6 @@ void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose){
     }
 }
 
-
-
-
 template <typename datatype>
 void ANN<datatype>::filteredPruning(){
     // Iterate over all the edges and if the filter values are different, remove the edge

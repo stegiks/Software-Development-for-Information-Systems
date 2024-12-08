@@ -113,16 +113,21 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     parseQueryVector(file_path_query, query_category_values, queries);
 
     std::vector<std::vector<int>> gt;
+
     // If the ground truth file is not provided, calculate the ground truth and save it to a file
+    std::string file_name = file_path_gt;
     if(file_path_gt.empty()){
 
+        // Create the file name for the calculated ground truth
         std::ostringstream file_name_stream;
         std::string algorithm_used = "filtered";
         std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
         file_name_stream << "./groundtruth/groundtruth" << dataset_name << "_" << algorithm_used << ".bin";
-        std::string file_name = file_name_stream.str();
+        file_name = file_name_stream.str();
 
+        // Check if the file already exists and ground truth is already calculated
         if(!std::filesystem::exists(file_name)){
+            // Calculate the ground truth
             std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
             std::vector<std::vector<std::pair<float, int>>> temp_gt;
             calculateGroundTruth(queries, base, temp_gt, &query_category_values, &base_category_values);
@@ -132,6 +137,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
                 throw std::runtime_error("Could not open file to save ground truth");
             }
 
+            // Save the ground truth to the file
             for(const auto& query_gt : temp_gt){
                 int dimension = (int)query_gt.size();
                 file.write((char*)&dimension, sizeof(int));
@@ -143,11 +149,10 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
 
             file.close();
         }
-        gt = parseVecs<int>(file_name);
     }
-    else{
-        gt = parseVecs<int>(file_path_gt);
-    }
+
+    // Parse the ground truth from the file
+    gt = parseVecs<int>(file_name);
 
     // Check if the files are parsed successfully
     if(base.empty() || queries.empty() || gt.empty()){
@@ -246,39 +251,43 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
     std::vector<std::vector<int>> gt;
 
+    std::string file_name = file_path_gt;
     // If the ground truth file is not provided, calculate the ground truth and save it to a file
     if(file_path_gt.empty()){
-        std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
-        std::vector<std::vector<std::pair<float, int>>> temp_gt;
-        calculateGroundTruth(query, base, temp_gt);
-
+        // Create the file name for the calculated ground truth
         std::ostringstream file_name_stream;
         std::string algorithm_used = "unfiltered";
         std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
         file_name_stream << "./groundtruth/groundtruth" << dataset_name << "_" << algorithm_used << ".bin";
-        std::string file_name = file_name_stream.str();
+        file_name = file_name_stream.str();
 
-        std::ofstream file(file_name, std::ios::binary);
-        if(!file){
-            throw std::runtime_error("Could not open file to save ground truth");
-        }
-
-        for(const auto& query_gt : temp_gt){
-            int dimension = (int)query_gt.size();
-            file.write((char*)&dimension, sizeof(int));
-
-            for(const auto& [distance, index] : query_gt){
-                file.write((char*)&index, sizeof(int));
+        // Check if the file already exists and ground truth is already calculated
+        if(!std::filesystem::exists(file_name)){
+            std::cout << BLUE << "Calculating ground truth. This may take a while..." << RESET << std::endl;
+            std::vector<std::vector<std::pair<float, int>>> temp_gt;
+            calculateGroundTruth(query, base, temp_gt);
+            
+            std::ofstream file(file_name, std::ios::binary);
+            if(!file){
+                throw std::runtime_error("Could not open file to save ground truth");
             }
+
+            for(const auto& query_gt : temp_gt){
+                int dimension = (int)query_gt.size();
+                file.write((char*)&dimension, sizeof(int));
+
+                for(const auto& [distance, index] : query_gt){
+                    file.write((char*)&index, sizeof(int));
+                }
+            }
+
+            file.close();
         }
-
-        file.close();
-        gt = parseVecs<int>(file_name);
     }
-    else{
-        gt = parseVecs<int>(file_path_gt);
-    }
-
+    
+    // Parse the ground truth from the file
+    gt = parseVecs<int>(file_name);
+    
     // Check if the files are parsed successfully
     if(base.empty() || query.empty() || gt.empty()){
         throw std::runtime_error("Parsing failed and returned empty vectors");
