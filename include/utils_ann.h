@@ -68,6 +68,7 @@ public:
 
     // Operator() compares the distances of points at indices a and b to the comparison vector.
     // If the distance of a node from the comparison vector has already been calculated, don't recalculate it.
+    // If the distances are equal, compare the indices so that the set will have nodes with same distance too.
     bool operator()(int a, int b) const {
         float distance_a = 0.0f;
         float distance_b = 0.0f;
@@ -86,6 +87,10 @@ public:
         }
         else{
             distance_b = distance_map[b];
+        }
+
+        if(distance_a == distance_b){
+            return a < b;
         }
 
         return distance_a < distance_b;
