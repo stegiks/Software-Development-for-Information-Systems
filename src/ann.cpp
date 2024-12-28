@@ -487,6 +487,22 @@ void ANN<datatype>::calculateMedoid(){
 }
 
 template <typename datatype>
+void ANN<datatype>::randomMedoid(){
+    std::size_t n = this->node_to_point_map.size();
+    if(n == 0){
+        std::cerr   << "Error : No points in the dataset" << RESET << std::endl;
+        throw std::invalid_argument("randomMedoid: No points in the dataset");
+        return;
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<std::size_t> dis(0, n-1);
+
+    this->cached_medoid = dis(gen);
+}
+
+template <typename datatype>
 const int& ANN<datatype>::getMedoid(){
     if(!this->cached_medoid.has_value())
         this->calculateMedoid();
@@ -495,7 +511,7 @@ const int& ANN<datatype>::getMedoid(){
 }
 
 template <typename datatype>
-void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose){
+void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose, bool medoid_optimization){
     
     this->G->enforceRegular(R);
 
@@ -504,7 +520,10 @@ void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose){
     }
 
     // Calculate medoid of dataset
-    this->calculateMedoid();
+    if(medoid_optimization)
+        this->randomMedoid();
+    else
+        this->calculateMedoid();
 
     if(verbose){
         std::cout << GREEN << "Medoid calculated" << RESET << std::endl;
@@ -598,8 +617,9 @@ void ANN<datatype>::filteredPruning(){
 }
 
 template <typename datatype>
-void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_stitched){
-    this->G->enforceRegular(0);
+void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_stitched, int z){
+    
+    this->G->enforceRegular(z);
 
     ANN<datatype> *small_graph;
 
@@ -646,8 +666,8 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
 }
 
 template <typename datatype>
-void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau){
-    this->G->enforceRegular(0);
+void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
+    this->G->enforceRegular(z);
   
     std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
 
