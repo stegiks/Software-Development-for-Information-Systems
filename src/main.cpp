@@ -18,6 +18,7 @@ void printHelp(){
               << YELLOW << "-R " << MAGENTA << "<Regularity> " << RESET
               << YELLOW << "-L " << MAGENTA << "<L(upper limit)> " << RESET
               << "[" << YELLOW << "-load " << MAGENTA << "<file_path_graph>" << RESET << "]"
+              << "[" << YELLOW << "-save " << MAGENTA << "<file_path_graph>" << RESET << "]"
               << "[" << YELLOW << "-algo " << MAGENTA << "<algorithm>" << RESET << "]"
               << std::endl << std::endl;
 
@@ -38,6 +39,8 @@ void printHelp(){
               << ": Upper limit (L) for search." << std::endl;
     std::cout << "  -load " << "<file_path_graph> " 
               << ": (Optional) Path to precomputed graph file." << std::endl;
+    std::cout << "  -save " << "<file_path_graph> "
+                << ": (Optional) Path to save the computed graph." << std::endl;
     std::cout << "  -algo " << "stitch/filter " 
               << ": (Optional) Algorithm to use for filtered datasets. Default is FilteredVamana." << std::endl << std::endl;
 
@@ -110,9 +113,14 @@ int main(int argc, char** argv) {
             file_path_gt = args["-gt"];
         }
 
-        std::string file_path_graph = "";
+        std::string file_path_load = "";
         if (args.find("-load") != args.end()) {
-            file_path_graph = args["-load"];
+            file_path_load = args["-load"];
+        }
+
+        std::string file_path_save = "";
+        if (args.find("-save") != args.end()) {
+            file_path_save = args["-save"];
         }
 
         // Validate extension
@@ -122,16 +130,16 @@ int main(int argc, char** argv) {
 
         // Call processing function based on the file format
         if (file_format == "fvecs") {
-            processVecFormat<float>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+            processVecFormat<float>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, true);
         }
         else if (file_format == "ivecs") {
-            processVecFormat<int>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+            processVecFormat<int>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, true);
         }
         else if (file_format == "bvecs") {
-            processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph);
+            processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, true);
         }
         else if (file_format == "bin") {
-            processBinFormat(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_graph, args["-algo"]);
+            processBinFormat(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, args["-algo"], true);
         }
         else {
             std::cerr << RED << "Error : Invalid extension" << RESET << std::endl;

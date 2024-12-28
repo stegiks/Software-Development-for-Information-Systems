@@ -102,8 +102,8 @@ void calculateGroundTruth(const std::vector<std::vector<datatype>>& queries,
     }
 }
 
-void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph, const std::string& algo){
-    
+void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, 
+    const std::string& file_path_load, const std::string& file_path_save, const std::string& algo, bool do_query){
     std::vector<std::vector<float>> base;
     std::vector<float> base_category_values;
     std::vector<std::vector<float>> queries;
@@ -165,88 +165,81 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     ANN<float> ann(base, base_category_values);
 
     // Open the file to write the graph
-    if(file_path_graph.empty()){
-        std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
+    if(file_path_load.empty()){
         if(algo == "stitch"){
+            std::cout << BLUE << "Running stitched Vamana algorithm to create the graph" << RESET << std::endl;
             ann.stitchedVamana(alpha, L, (int)(R / 2), R);
             std::cout << GREEN << "Stitched Vamana Graph executed successfully" << RESET << std::endl;
         }
         else{
+            std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
             ann.filteredVamana(alpha, L, R, 5);
             std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl;
         }
     }
     else{
         // Load the graph from the file
-        ann.loadGraph(file_path_graph);
+        ann.loadGraph(file_path_load);
         std::cout << GREEN << "Graph loaded successfully" << RESET << std::endl;
 
         // Run filtered find medoid to fill filter_to_start_node used in filteredGreedySearch
         ann.filteredFindMedoid(5);
     }
 
-    int total_correct_guesses = 0;
-    int total_gt_size = 0;
+    if(do_query){
+        int total_correct_guesses = 0;
+        int total_gt_size = 0;
 
-    for(std::size_t i = 0; i < queries.size(); i++){
-        int k = (int)gt[i].size();
+        for(std::size_t i = 0; i < queries.size(); i++){
+            int k = (int)gt[i].size();
 
-        CompareVectors<float> compare(ann.node_to_point_map, queries[i]);
-        std::set<int, CompareVectors<float>> NNS(compare);
-        std::unordered_set<int> Visited;
+            CompareVectors<float> compare(ann.node_to_point_map, queries[i]);
+            std::set<int, CompareVectors<float>> NNS(compare);
+            std::unordered_set<int> Visited;
 
-        // Call filtered Greedy
-        if(query_category_values[i] == -1){
-            ann.filteredGreedySearch(-1, k, L, -1, NNS, Visited, compare);
-        }
-        else{
-            int start_node = ann.getStartNode(query_category_values[i]);
-            if(start_node == -1) continue;
-            ann.filteredGreedySearch(start_node, k, L, query_category_values[i], NNS, Visited, compare);
-        }
-
-        // Search in the ground truth
-        int correct = 0;
-        for(const int& index : gt[i]){
-            if(NNS.find(index) != NNS.end()){
-                correct++;
+            // Call filtered Greedy
+            if(query_category_values[i] == -1){
+                ann.filteredGreedySearch(-1, k, L, -1, NNS, Visited, compare);
             }
+            else{
+                int start_node = ann.getStartNode(query_category_values[i]);
+                if(start_node == -1) continue;
+                ann.filteredGreedySearch(start_node, k, L, query_category_values[i], NNS, Visited, compare);
+            }
+
+            // Search in the ground truth
+            int correct = 0;
+            for(const int& index : gt[i]){
+                if(NNS.find(index) != NNS.end()){
+                    correct++;
+                }
+            }
+            
+            float recall = (float)correct / k * 100;
+            std::cout << "Query " << i << " with category value " << query_category_values[i] << " recall : " << recall << "%" << std::endl;
+            
+            total_correct_guesses += correct;
+            total_gt_size += k;
         }
-        
-        float recall = (float)correct / k * 100;
-        std::cout << "Query " << i << " with category value " << query_category_values[i] << " recall : " << recall << "%" << std::endl;
-        
-        total_correct_guesses += correct;
-        total_gt_size += k;
+
+        float total_recall = (float)total_correct_guesses / total_gt_size * 100;
+        std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
     }
 
-    float total_recall = (float)total_correct_guesses / total_gt_size * 100;
-    std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
-
-    if (file_path_graph.empty()) {
-        std::ostringstream file_name_stream;
-        std::string algorithm_used = algo == "stitch" ? "stitched" : "filtered";
-        std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
-        file_name_stream << "./graphs/graph" << dataset_name << "_" << algorithm_used << "_"
-                        << std::fixed << std::setprecision(3)
-                        << alpha << "_" << R << "_" << L;
-
-        std::string file_name = file_name_stream.str();
-
-        // Check if the file already exists
-        if (std::filesystem::exists(file_name)) {
-            std::cout << YELLOW << "File already exists: " << file_name << RESET << std::endl;
-        } else {
-            ann.saveGraph(file_name);
-            std::cout << GREEN << "Graph saved successfully: " << file_name << RESET << std::endl;
+    if(!file_path_save.empty()){
+        if (std::filesystem::exists(file_path_save)) {
+            std::cout << YELLOW << "File already exists: " << file_path_save << RESET << std::endl;
+        } 
+        else {
+            ann.saveGraph(file_path_save);
+            std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
         }
     }
-
 }
 
 template <typename datatype>
-void processVecFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph){
-    
+void processVecFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L,
+     const std::string& file_path_load, const std::string& file_path_save, bool do_query){
     std::vector<std::vector<datatype>> base = parseVecs<datatype>(file_path_base);
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
     std::vector<std::vector<int>> gt;
@@ -300,69 +293,63 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
     std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
     
     // Open the file to write the graph
-    if(file_path_graph.empty()){
+    if(file_path_load.empty()){
         std::cout << BLUE << "Running Vamana algorithm to create the graph" << RESET << std::endl;
         ann.Vamana(alpha, L, R, true);
         std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
     }
     else{
         // Load the graph from the file
-        ann.loadGraph(file_path_graph);
+        ann.loadGraph(file_path_load);
         std::cout << GREEN << "Graph loaded successfully" << RESET << std::endl;
     }
 
-    // For every query point, find the results and compare with ground truth
-    int total_correct_guesses = 0;
-    int total_gt_size = 0;
+    if(do_query){
+        // For every query point, find the results and compare with ground truth
+        int total_correct_guesses = 0;
+        int total_gt_size = 0;
 
-    for(std::size_t i = 0; i < query.size(); i++){
-        int k = (int)gt[i].size();
+        for(std::size_t i = 0; i < query.size(); i++){
+            int k = (int)gt[i].size();
 
-        CompareVectors<datatype> compare(ann.node_to_point_map, query[i]);
-        std::set<int, CompareVectors<datatype>> NNS(compare);
-        std::unordered_set<int> Visited;
+            CompareVectors<datatype> compare(ann.node_to_point_map, query[i]);
+            std::set<int, CompareVectors<datatype>> NNS(compare);
+            std::unordered_set<int> Visited;
 
-        // Call Greedy search to find the nearest neighbours
-        ann.greedySearch(ann.getMedoid(), k, L, NNS, Visited, compare);
+            // Call Greedy search to find the nearest neighbours
+            ann.greedySearch(ann.getMedoid(), k, L, NNS, Visited, compare);
 
-        // Search in the ground truth
-        int correct = 0;
-        for(const int& index : gt[i]){
-            if(NNS.find(index) != NNS.end()){
-                correct++;
+            // Search in the ground truth
+            int correct = 0;
+            for(const int& index : gt[i]){
+                if(NNS.find(index) != NNS.end()){
+                    correct++;
+                }
             }
+            float recall = (float)correct / k * 100;
+            std::cout << "Query " << i << " recall : " << recall << "%" << std::endl;
+
+            total_correct_guesses += correct;
+            total_gt_size += k; 
         }
-        float recall = (float)correct / k * 100;
-        std::cout << "Query " << i << " recall : " << recall << "%" << std::endl;
 
-        total_correct_guesses += correct;
-        total_gt_size += k; 
+        float total_recall = (float)total_correct_guesses / total_gt_size * 100;
+        std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
+
     }
-
-    float total_recall = (float)total_correct_guesses / total_gt_size * 100;
-    std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
-
-    if (file_path_graph.empty()) {
-        std::ostringstream file_name_stream;
-        std::string algorithm_used = "unfiltered";
-        std::string dataset_name = (base.size()<size_t(100000)) ? "_small" : "_large";
-        file_name_stream << "./graphs/graph" << dataset_name << "_" << algorithm_used << "_"
-                        << std::fixed << std::setprecision(3)
-                        << alpha << "_" << R << "_" << L;
-
-        std::string file_name = file_name_stream.str();
-
-        // Check if the file already exists
-        if (std::filesystem::exists(file_name)) {
-            std::cout << YELLOW << "File already exists: " << file_name << RESET << std::endl;
-        } else {
-            ann.saveGraph(file_name);
-            std::cout << GREEN << "Graph saved successfully: " << file_name << RESET << std::endl;
+    
+    if(!file_path_save.empty()){
+        if(std::filesystem::exists(file_path_save)){
+            std::cout << YELLOW << "File already exists: " << file_path_save << RESET << std::endl;
+        }
+        else{
+            ann.saveGraph(file_path_save);
+            std::cout << GREEN << "Graph saved successfully" << RESET << std::endl;
         }
     }
 }
 
 // Explicit instantiation of the processing function
-template void processVecFormat<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
-template void processVecFormat<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
-template void processVecFormat<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_graph);
+template void processVecFormat<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query);
+template void processVecFormat<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query);
+template void processVecFormat<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query);
