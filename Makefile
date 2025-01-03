@@ -11,8 +11,16 @@ TEST := ./tests
 CC := gcc
 CXX := g++
 
+# Optimization flag
+OPTIMIZED := 0
+
 # Flags
-CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -lstdc++fs  -O3 -march=native -flto # After -std=c++17 optimization flags
+CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -lstdc++fs -O3 -march=native -flto # After -std=c++17 optimization flags
+
+# Detect if optimized flag is set
+ifeq ($(OPTIMIZED), 1)
+	CFLAGS += -DOPTIMIZED
+endif
 
 # Path to local google test libraries
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread

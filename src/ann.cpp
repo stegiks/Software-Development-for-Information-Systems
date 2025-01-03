@@ -511,7 +511,7 @@ const int& ANN<datatype>::getMedoid(){
 }
 
 template <typename datatype>
-void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose, bool medoid_optimization){
+void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose){
     
     this->G->enforceRegular(R);
 
@@ -520,14 +520,11 @@ void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose, bool medoid_
     }
 
     // Calculate medoid of dataset
-    if(medoid_optimization)
+    #if defined(OPTIMIZED)
         this->randomMedoid();
-    else
+    #else
         this->calculateMedoid();
-
-    if(verbose){
-        std::cout << GREEN << "Medoid calculated" << RESET << std::endl;
-    }
+    #endif
 
     // Get a random permutation of 1 to n
     std::vector<int> perm;
@@ -667,9 +664,8 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
 
 template <typename datatype>
 void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
+    
     this->G->enforceRegular(z);
-  
-    std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
 
     // Calculate medoid of dataset
     this->filteredFindMedoid(tau);

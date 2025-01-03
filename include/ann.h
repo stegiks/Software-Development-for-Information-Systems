@@ -68,7 +68,7 @@ public:
     template <typename Compare>
     void robustPrune(const int & point, std::set<int, Compare>& candidate_set, const float alpha, const int degree_bound, bool filtered);
     
-    void Vamana(float alpha, int L, int R, bool verbose = false, bool medoid_optim = false);
+    void Vamana(float alpha, int L, int R, bool verbose = false);
     void filteredVamana(float alpha, int L, int R, int tau, int z = 0);
     void stitchedVamana(float alpha, int L_small, int R_small, int R_stitched, int z = 0);
 
