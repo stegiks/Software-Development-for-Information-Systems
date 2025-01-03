@@ -17,9 +17,10 @@ void printHelp(){
               << YELLOW << "-a " << MAGENTA << "<alpha> " << RESET
               << YELLOW << "-R " << MAGENTA << "<Regularity> " << RESET
               << YELLOW << "-L " << MAGENTA << "<L(upper limit)> " << RESET
-              << "[" << YELLOW << "-load " << MAGENTA << "<file_path_graph>" << RESET << "]"
-              << "[" << YELLOW << "-save " << MAGENTA << "<file_path_graph>" << RESET << "]"
-              << "[" << YELLOW << "-algo " << MAGENTA << "<algorithm>" << RESET << "]"
+              << "[" << YELLOW << "-load " << MAGENTA << "<file_path_graph>" << RESET << "] "
+              << "[" << YELLOW << "-save " << MAGENTA << "<file_path_graph>" << RESET << "] "
+              << "[" << YELLOW << "-algo " << MAGENTA << "<algorithm>" << RESET << "] "
+              << "[" << YELLOW << "-query" << MAGENTA << "<y/n>" << RESET << "]"
               << std::endl << std::endl;
 
     std::cout << GREEN << "Options:" << RESET << std::endl;
@@ -42,10 +43,12 @@ void printHelp(){
     std::cout << "  -save " << "<file_path_graph> "
                 << ": (Optional) Path to save the computed graph." << std::endl;
     std::cout << "  -algo " << "stitch/filter " 
-              << ": (Optional) Algorithm to use for filtered datasets. Default is FilteredVamana." << std::endl << std::endl;
+              << ": (Optional) Algorithm to use for filtered datasets. Default is FilteredVamana." << std::endl;
+    std::cout << "  -query " << "y/n "
+              << ": (Optional) Flag to enable (y) or disable (n) query execution. Default is y. NOTE: This flag is overridden if a graph file is provided." << std::endl << std::endl;
 
     std::cout << GREEN << "Example:" << RESET << std::endl;
-    std::cout << CYAN << "  ./main -b base.bin -q query.bin -f bin -a 1.1 -R 10 -L 100" << RESET << std::endl;
+    std::cout << CYAN << "  ./main -b base.bin -q query.bin -f bin -a 1.1 -R 10 -L 100 -query y" << RESET << std::endl;
 }
 
 void printUsage() {
@@ -106,6 +109,17 @@ int main(int argc, char** argv) {
         float alpha = std::stof(args["-a"]);
         int R = std::stoi(args["-R"]);
         int L = std::stoi(args["-L"]);
+        bool do_query = true;
+
+        if(args.find("-query") != args.end()){
+            std::string query_flag = args["-query"];
+            if(query_flag == "n"){
+                do_query = false;
+            }
+            else if(query_flag != "y"){
+                throw std::invalid_argument("Invalid query flag");
+            }
+        }
 
         // Check optional flags
         std::string file_path_gt = "";
@@ -116,6 +130,11 @@ int main(int argc, char** argv) {
         std::string file_path_load = "";
         if (args.find("-load") != args.end()) {
             file_path_load = args["-load"];
+
+            if(!do_query){
+                std::cout << BLUE << "Overriding -query flag because a graph file was provided" << RESET << std::endl;
+                do_query = true;
+            }
         }
 
         std::string file_path_save = "";
@@ -130,16 +149,20 @@ int main(int argc, char** argv) {
 
         // Call processing function based on the file format
         if (file_format == "fvecs") {
-            processVecFormat<float>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, true);
+            processVecFormat<float>(file_path_base, file_path_query, file_path_gt,
+            alpha, R, L, file_path_load, file_path_save, do_query);
         }
         else if (file_format == "ivecs") {
-            processVecFormat<int>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, true);
+            processVecFormat<int>(file_path_base, file_path_query, file_path_gt,
+            alpha, R, L, file_path_load, file_path_save, do_query);
         }
         else if (file_format == "bvecs") {
-            processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, true);
+            processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, 
+            alpha, R, L, file_path_load, file_path_save, do_query);
         }
         else if (file_format == "bin") {
-            processBinFormat(file_path_base, file_path_query, file_path_gt, alpha, R, L, file_path_load, file_path_save, args["-algo"], true);
+            processBinFormat(file_path_base, file_path_query, file_path_gt,
+            alpha, R, L, file_path_load, file_path_save, args["-algo"], do_query);
         }
         else {
             std::cerr << RED << "Error : Invalid extension" << RESET << std::endl;
