@@ -16,3 +16,7 @@
 !/include/**
 !tests/
 !tests/**
+!/python_scripts/**
+!/python_scripts/
+!/logs/**
+!/logs/

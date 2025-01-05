@@ -195,7 +195,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             memoryUsed = memoryAfter - memoryBefore;
 
             if(!file_path_log.empty()){
-                std::ofstream log_file(file_path_log);
+                std::ofstream log_file(file_path_log, std::ios::app);
                 if(!log_file){
                     throw std::runtime_error("Could not open file to save log");
                 }
@@ -221,7 +221,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
 
             std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl;
             if(!file_path_log.empty()){
-                std::ofstream log_file(file_path_log);
+                std::ofstream log_file(file_path_log, std::ios::app);
                 if(!log_file){
                     throw std::runtime_error("Could not open file to save log");
                 }
@@ -374,7 +374,7 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
 
         if(!file_path_log.empty()){
             // Open the log file
-            std::ofstream log_file(file_path_log);
+            std::ofstream log_file(file_path_log, std::ios::app);
             if(!log_file){
                 throw std::runtime_error("Could not open log file");
             }
