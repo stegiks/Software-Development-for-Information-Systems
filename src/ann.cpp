@@ -511,13 +511,9 @@ const int& ANN<datatype>::getMedoid(){
 }
 
 template <typename datatype>
-void ANN<datatype>::Vamana(float alpha, int L, int R, bool verbose){
+void ANN<datatype>::Vamana(float alpha, int L, int R){
     
     this->G->enforceRegular(R);
-
-    if(verbose){
-        std::cout << GREEN << "Graph enforced regularity" << RESET << std::endl;
-    }
 
     // Calculate medoid of dataset
     #if defined(OPTIMIZED)

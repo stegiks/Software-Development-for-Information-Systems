@@ -26,9 +26,9 @@ endif
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
 
 # Arguments
-ARGS := -b ./data/siftsmall_base.fvecs -q ./data/siftsmall_query.fvecs -f fvecs -gt ./data/siftsmall_groundtruth.ivecs -a 1 -R 50 -L 150
-ARGS_FILT := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -a 1 -R 50 -L 150 -algo filter
-ARGS_STITCH := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -a 1 -R 70 -L 150 -algo stitch
+ARGS := -b ./data/siftsmall_base.fvecs -q ./data/siftsmall_query.fvecs -f fvecs -gt ./data/siftsmall_groundtruth.ivecs -a 1 -R 50 -L 150 -log ./log_unfiletered.txt
+ARGS_FILT := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -a 1 -R 50 -L 150 -algo filter -log ./log_filter.txt
+ARGS_STITCH := -b ./data/dummy-data.bin -q ./data/dummy-queries.bin -f bin -a 1 -R 70 -L 150 -algo stitch -log ./log_stitch.txt
 
 # Targets
 SRC_FILES := $(wildcard $(SRC)/*.cpp)

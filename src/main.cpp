@@ -21,6 +21,7 @@ void printHelp(){
               << "[" << YELLOW << "-save " << MAGENTA << "<file_path_graph>" << RESET << "] "
               << "[" << YELLOW << "-algo " << MAGENTA << "<algorithm>" << RESET << "] "
               << "[" << YELLOW << "-query" << MAGENTA << "<y/n>" << RESET << "]"
+              << "[" << YELLOW << "-log " << MAGENTA << "<file_path_log>" << RESET << "]"
               << std::endl << std::endl;
 
     std::cout << GREEN << "Options:" << RESET << std::endl;
@@ -46,7 +47,8 @@ void printHelp(){
               << ": (Optional) Algorithm to use for filtered datasets. Default is FilteredVamana." << std::endl;
     std::cout << "  -query " << "y/n "
               << ": (Optional) Flag to enable (y) or disable (n) query execution. Default is y. NOTE: This flag is overridden if a graph file is provided." << std::endl << std::endl;
-
+    std::cout << "  -log " << "<file_path_log> "
+              << ": (Optional) Path to save the log file." << std::endl << std::endl;
     std::cout << GREEN << "Example:" << RESET << std::endl;
     std::cout << CYAN << "  ./main -b base.bin -q query.bin -f bin -a 1.1 -R 10 -L 100 -query y" << RESET << std::endl;
 }
@@ -106,6 +108,10 @@ int main(int argc, char** argv) {
         std::string file_path_base = args["-b"];
         std::string file_path_query = args["-q"];
         std::string file_format = args["-f"];
+        std::string file_path_log = "";
+        if(args.find("-log") != args.end()){
+            file_path_log = args["-log"];
+        }
         float alpha = std::stof(args["-a"]);
         int R = std::stoi(args["-R"]);
         int L = std::stoi(args["-L"]);
@@ -150,19 +156,19 @@ int main(int argc, char** argv) {
         // Call processing function based on the file format
         if (file_format == "fvecs") {
             processVecFormat<float>(file_path_base, file_path_query, file_path_gt,
-            alpha, R, L, file_path_load, file_path_save, do_query);
+            alpha, R, L, file_path_load, file_path_save, do_query, file_path_log);
         }
         else if (file_format == "ivecs") {
             processVecFormat<int>(file_path_base, file_path_query, file_path_gt,
-            alpha, R, L, file_path_load, file_path_save, do_query);
+            alpha, R, L, file_path_load, file_path_save, do_query, file_path_log);
         }
         else if (file_format == "bvecs") {
             processVecFormat<unsigned char>(file_path_base, file_path_query, file_path_gt, 
-            alpha, R, L, file_path_load, file_path_save, do_query);
+            alpha, R, L, file_path_load, file_path_save, do_query, file_path_log);
         }
         else if (file_format == "bin") {
             processBinFormat(file_path_base, file_path_query, file_path_gt,
-            alpha, R, L, file_path_load, file_path_save, args["-algo"], do_query);
+            alpha, R, L, file_path_load, file_path_save, args["-algo"], do_query, file_path_log);
         }
         else {
             std::cerr << RED << "Error : Invalid extension" << RESET << std::endl;

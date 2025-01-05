@@ -2,6 +2,15 @@
 #include "ann.h"
 #include <iomanip>
 #include <filesystem>
+#include <sys/resource.h>
+#include <sys/time.h>
+
+// Author: Theodoris Mallios
+long getMemoryUsage(){
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    return usage.ru_maxrss;
+}
 
 std::string findExtension(const std::string& file_path){
     std::size_t pos = file_path.find_last_of(".");
@@ -102,13 +111,17 @@ void calculateGroundTruth(const std::vector<std::vector<datatype>>& queries,
     }
 }
 
+
 void processBinFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, 
-    const std::string& file_path_load, const std::string& file_path_save, const std::string& algo, bool do_query){
+    const std::string& file_path_load, const std::string& file_path_save, const std::string& algo, bool do_query, const std::string& file_path_log){
+    
     std::vector<std::vector<float>> base;
     std::vector<float> base_category_values;
     std::vector<std::vector<float>> queries;
     std::vector<float> query_category_values;
 
+
+    long memoryBefore = 0, memoryAfter = 0 , memoryUsed = 0;
     parseDataVector(file_path_base, base_category_values, base);
     parseQueryVector(file_path_query, query_category_values, queries);
 
@@ -162,7 +175,9 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
+    memoryBefore = getMemoryUsage();
     ANN<float> ann(base, base_category_values);
+    
 
     // Open the file to write the graph
     if(file_path_load.empty()){
@@ -172,7 +187,23 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             #if defined(OPTIMIZED)
                 z = 50;
             #endif
+            auto start = std::chrono::high_resolution_clock::now();
             ann.stitchedVamana(alpha, L, (int)(R / 2), R, z);
+            auto end = std::chrono::high_resolution_clock::now();
+            auto time_used = std::chrono::duration<double>(end - start).count();
+            memoryAfter = getMemoryUsage();
+            memoryUsed = memoryAfter - memoryBefore;
+
+            if(!file_path_log.empty()){
+                std::ofstream log_file(file_path_log);
+                if(!log_file){
+                    throw std::runtime_error("Could not open file to save log");
+                }
+
+                log_file << alpha << '\t' << L << '\t' << R << '\t' << time_used << '\t' << memoryUsed;
+                log_file.close();
+            }
+
             std::cout << GREEN << "Stitched Vamana Graph executed successfully" << RESET << std::endl;
         }
         else{
@@ -181,9 +212,27 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             #if defined(OPTIMIZED)
                 z = 50;
             #endif
+            auto start = std::chrono::high_resolution_clock::now();
             ann.filteredVamana(alpha, L, R, 5, z);
+            auto end = std::chrono::high_resolution_clock::now();
+            auto time_used = std::chrono::duration<double>(end - start).count();
+            memoryAfter = getMemoryUsage();
+            memoryUsed = memoryAfter - memoryBefore;
+
             std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl;
+            if(!file_path_log.empty()){
+                std::ofstream log_file(file_path_log);
+                if(!log_file){
+                    throw std::runtime_error("Could not open file to save log");
+                }
+
+                log_file << alpha << '\t' << L << '\t' << R << '\t' << time_used << '\t' << memoryUsed;
+                log_file.close();
+            }
+        
         }
+
+        
     }
     else{
         // Load the graph from the file
@@ -232,6 +281,15 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
 
         float total_recall = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
+        if(!file_path_log.empty()){
+            std::ofstream log_file(file_path_log, std::ios::app);
+            if(!log_file){
+                throw std::runtime_error("Could not open file to save log");
+            }
+
+            log_file <<'\t' << total_recall << std::endl;
+            log_file.close();
+        }
     }
 
     if(!file_path_save.empty()){
@@ -247,10 +305,12 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
 
 template <typename datatype>
 void processVecFormat(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L,
-     const std::string& file_path_load, const std::string& file_path_save, bool do_query){
+     const std::string& file_path_load, const std::string& file_path_save, bool do_query, const std::string& file_path_log){
+    
     std::vector<std::vector<datatype>> base = parseVecs<datatype>(file_path_base);
     std::vector<std::vector<datatype>> query = parseVecs<datatype>(file_path_query);
     std::vector<std::vector<int>> gt;
+    long memoryBefore = 0, memoryAfter = 0, memoryUsed = 0;
 
     std::string file_name = file_path_gt;
     // If the ground truth file is not provided, calculate the ground truth and save it to a file
@@ -297,13 +357,31 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
+    memoryBefore = getMemoryUsage();
     ANN<datatype> ann(base, (size_t)R);
     std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
     
     // Open the file to write the graph
     if(file_path_load.empty()){
         std::cout << BLUE << "Running Vamana algorithm to create the graph" << RESET << std::endl;
-        ann.Vamana(alpha, L, R, false);
+        
+        auto start = std::chrono::high_resolution_clock::now();
+        ann.Vamana(alpha, L, R);
+        auto end = std::chrono::high_resolution_clock::now();
+        memoryAfter = getMemoryUsage();
+        memoryUsed = memoryAfter - memoryBefore;
+        auto time_used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+        if(!file_path_log.empty()){
+            // Open the log file
+            std::ofstream log_file(file_path_log);
+            if(!log_file){
+                throw std::runtime_error("Could not open log file");
+            }
+            // Write the time used to the log file
+            log_file << alpha << '\t' << L << '\t' << R << '\t' << time_used << '\t' << memoryUsed;
+            log_file.close();
+        }
         std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
     }
     else{
@@ -344,6 +422,17 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
         float total_recall = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
 
+        if(!file_path_log.empty()){
+            // Open the log file
+            std::ofstream log_file(file_path_log, std::ios::app);
+            if(!log_file){
+                throw std::runtime_error("Could not open log file");
+            }
+            // Write the time used to the log file
+            log_file << '\t' << total_recall << std::endl;
+            log_file.close();
+        }
+
     }
     
     if(!file_path_save.empty()){
@@ -358,6 +447,6 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
 }
 
 // Explicit instantiation of the processing function
-template void processVecFormat<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query);
-template void processVecFormat<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query);
-template void processVecFormat<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query);
+template void processVecFormat<int>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query, const std::string& file_path_log);
+template void processVecFormat<float>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_quer, const std::string& file_path_log);
+template void processVecFormat<unsigned char>(const std::string& file_path_base, const std::string& file_path_query, const std::string& file_path_gt, float alpha, int R, int L, const std::string& file_path_load, const std::string& file_path_save, bool do_query, const std::string& file_path_log);
