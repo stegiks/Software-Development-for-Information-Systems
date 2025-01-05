@@ -38,6 +38,7 @@ void ANN<datatype>::neighbourNodes(const int& point, std::vector<int>& neighbour
 
 template <typename datatype>
 bool ANN<datatype>::checkFilters(){
+
     for(size_t i = 0; i < this->node_to_point_map.size(); i++){
         // Get the neighbors of the point
         std::vector<int> neighbours;
@@ -241,12 +242,14 @@ void ANN<datatype>::filteredGreedySearch(const int& start_node, int k, int upper
 
     // If the start_node has value -1, then this means we are checking for a unfiltered query.
     // In this case, we are performing a "quick" filtered greedy search to find the nearest node in every sub graph.
+    //Possible Paralllelization Section
     std::set<int, Compare> difference(compare);
     if(start_node == -1){
         std::set<int, Compare> temp_nns(compare);
         std::unordered_set<int> temp_visited;
         int temp_upper_limit = upper_limit < 2 ? upper_limit : 2;
         
+        //Possible Paralllelization Section
         for(const auto& pair : this->filter_to_start_node){
             temp_nns.clear();
             temp_visited.clear();
@@ -277,6 +280,7 @@ void ANN<datatype>::filteredGreedySearch(const int& start_node, int k, int upper
         neighbours.clear();
         this->neighbourNodes(closest_point, neighbours);
 
+        // Possible Parallelization Section
         for(const int& neighbour : neighbours){
             // Skip if the neighbour has already been visited
             if(Visited.find(neighbour) != Visited.end())
@@ -290,6 +294,7 @@ void ANN<datatype>::filteredGreedySearch(const int& start_node, int k, int upper
             difference.insert(neighbour);
         }
 
+        // TODO Possibly Removed
         // Prune NNS to retain upper_limit closest points
         if(NNS.size() > (std::size_t)upper_limit){
             this->pruneSet(NNS, difference, upper_limit);
@@ -311,6 +316,7 @@ void ANN<datatype>::greedySearch(const int& start, int k, int upper_limit, std::
         return;
     }
 
+    //Possible Paralllelization Section
     // difference set the first time will have the start node
     std::set<int, CompareVectors<datatype>> difference(compare);
     difference.insert(start);
@@ -326,7 +332,9 @@ void ANN<datatype>::greedySearch(const int& start, int k, int upper_limit, std::
         // Get the neighbors of the closest point
         this->neighbourNodes(closest_point, neighbours);
 
+        // TODO Change Structure of for Loop to be like filteredGreedySearch
         // Update NNS set with neighbours of closest_point
+        //Possible Paralllelization Section
         for(const auto& neighbour : neighbours){
             NNS.insert(neighbour);
             
@@ -340,6 +348,7 @@ void ANN<datatype>::greedySearch(const int& start, int k, int upper_limit, std::
         Visited.insert(closest_point);
         difference.erase(closest_point);
 
+        // TODO Possible Remove as well
         // Update NNS to retain upper_limit closest points and update difference set
         if(NNS.size() > static_cast<std::size_t>(upper_limit)){
             this->pruneSet(NNS, difference, upper_limit);
@@ -381,6 +390,7 @@ void ANN<datatype>::robustPrune(const int &point, std::set<int, Compare>& candid
         if(this->G->countNeighbours(point) == degree_bound)
             break;
 
+        // Parallelization Section
         for(auto it = candidate_set.begin(); it != candidate_set.end();){
             const auto& element = *it;
            
@@ -438,6 +448,7 @@ void ANN<datatype>::filteredFindMedoid(int tau){
     }
 
     // Iterate through all filter values
+    // Parallelization Section
     for(const auto& pair : this->filter_to_node_map){
         const float& filter = pair.first;
         const std::vector<int>& Pf = pair.second;
@@ -449,6 +460,7 @@ void ANN<datatype>::filteredFindMedoid(int tau){
         std::sample(Pf.begin(), Pf.end(), std::back_inserter(Rf), tau, rng);
 
         // Select the first node as it is randomly sampled
+        //Possible Critical Section
         this->filter_to_start_node[filter] = Rf[0];
     }
 }
@@ -472,6 +484,7 @@ void ANN<datatype>::calculateMedoid(){
         throw std::invalid_argument("calculateMedoid: No points in the dataset");
 
     // Calculate one time the distance between each pair of points to save time
+    // Possible Parallelization Section
     for(std::size_t i = 0; i < n; i++){
         for(std::size_t j = i + 1; j < n; j++){
             float distance = calculateDistance(this->node_to_point_map[i], this->node_to_point_map[j], dim);
@@ -560,6 +573,7 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 
         this->neighbourNodes(point, neighbours);
 
+        
         for(auto j : neighbours){
             
             // If j hasn't an outgoing edge to point, then offset is 1
@@ -614,9 +628,10 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
     
     this->G->enforceRegular(z);
 
-    ANN<datatype> *small_graph;
+    // ANN<datatype> *small_graph;
 
     // Iterate over all the filters and create a subgraph for each filter
+    //Possible Parallelization Section
     for(const auto& pair : this->filter_to_node_map){       
         // Create a vector of points for the filter
         std::vector<std::vector<datatype>> small_points;
@@ -625,7 +640,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
         }
 
         // Create a new graph for the filter
-        small_graph = new ANN<datatype>(small_points);
+        ANN<datatype> *small_graph = new ANN<datatype>(small_points);
         small_graph->Vamana(alpha, L_small, R_small);
         
         // Stitch the small graph to the main graph 
@@ -634,6 +649,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
             std::vector<int> neighbours;
             small_graph->neighbourNodes(int(i), neighbours);
 
+            // Critical Section when adding edges to main graph
             for(int neighbour : neighbours){
                 this->G->addEdge(node, pair.second[neighbour]);
             }
@@ -643,6 +659,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
 
     }
 
+    // Possible Parallelization Section by changing the loop structure
     // For each vertice in the graph run robust prune
     for(size_t i = 0; i < this->node_to_point_map.size(); i++){
         std::set<int> candidate_set;
@@ -680,6 +697,7 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
     std::vector<int> neighbours;
     std::vector<int> neighbours_j;
 
+    // Possible Parallelization Section by changing the loop structure
     for(size_t i = 0; i < this->node_to_point_map.size(); i++){
         int point = perm[i];
 

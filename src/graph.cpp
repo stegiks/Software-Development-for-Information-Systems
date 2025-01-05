@@ -114,6 +114,7 @@ void Graph::printGraph(){
 
 // If the graph is not regular, enforce it to be regular
 void Graph::enforceRegular(int R){
+    // Possible Parallelization Section
     for(std::size_t i = 0; i < this->adj_list.size(); i++){
         std::unordered_set<int>& neighbours = this->getNeighbours(i);
 

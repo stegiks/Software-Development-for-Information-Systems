@@ -29,6 +29,7 @@ inline float calculateDistance(const std::vector<datatype>& a, const std::vector
     double distance = 0.0;
     float max_float = std::numeric_limits<float>::max();
 
+    // Parallelize this loop
     for(std::size_t i = 0; i < dim; i++){
         double diff = a[i] - b[i];
         distance += diff * diff;
