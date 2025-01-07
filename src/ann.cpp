@@ -1,6 +1,7 @@
 #include "ann.h"
 #include "defs.h"
 #include <filesystem>
+#include <omp.h>
 namespace fs = std::filesystem;
 
 // Prune the set to retain only the k closest points
@@ -483,15 +484,51 @@ void ANN<datatype>::calculateMedoid(){
     else
         throw std::invalid_argument("calculateMedoid: No points in the dataset");
 
-    // Calculate one time the distance between each pair of points to save time
-    // Possible Parallelization Section
-    for(std::size_t i = 0; i < n; i++){
-        for(std::size_t j = i + 1; j < n; j++){
-            float distance = calculateDistance(this->node_to_point_map[i], this->node_to_point_map[j], dim);
-            sum_distances[i] += distance;
-            sum_distances[j] += distance;
+
+
+    //Naive Parallel Approach
+    // #pragma omp parallel for schedule(dynamic)
+    // for(std::size_t i = 0; i < n; i++) {
+    //     float local_sum = 0.0;
+    //     for(std::size_t j = 0; j < n; j++) {
+    //         if(i != j) {
+    //             local_sum += calculateDistance(this->node_to_point_map[i], 
+    //                                         this->node_to_point_map[j], dim);
+    //         }
+    //     }
+    //     sum_distances[i] = local_sum;
+    // }
+    #if defined(PARALLEL)
+        #pragma omp parallel
+        {
+            std::vector<float> local_sums(n, 0.0);
+            
+            #pragma omp for schedule(static) nowait
+            for(std::size_t i = 0; i < n; i++) {
+                for(std::size_t j = i + 1; j < n; j++) {
+                    float distance = calculateDistance(this->node_to_point_map[i], 
+                                                    this->node_to_point_map[j], dim);
+                    local_sums[i] += distance;
+                    local_sums[j] += distance;
+                }
+            }
+
+            #pragma omp critical
+            for(std::size_t i = 0; i < n; i++) {
+                sum_distances[i] += local_sums[i];
+            }
         }
-    }
+    #else
+        // Serial Approach
+        // Calculate one time the distance between each pair of points to save time
+        for(std::size_t i = 0; i < n; i++){
+            for(std::size_t j = i + 1; j < n; j++){
+                float distance = calculateDistance(this->node_to_point_map[i], this->node_to_point_map[j], dim);
+                sum_distances[i] += distance;
+                sum_distances[j] += distance;
+            }
+        }
+    #endif
 
     // Find the point with the minimum sum of distances
     auto min_iterator = std::min_element(sum_distances.begin(), sum_distances.end());
@@ -628,51 +665,79 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
     
     this->G->enforceRegular(z);
 
-    // ANN<datatype> *small_graph;
+    // Convert map to vector for OpenMP compatibility
+    std::vector<std::pair<int, std::vector<int>>> filter_nodes;
+    for(const auto& pair : this->filter_to_node_map) {
+        filter_nodes.push_back(pair);
+    }
 
-    // Iterate over all the filters and create a subgraph for each filter
-    //Possible Parallelization Section
-    for(const auto& pair : this->filter_to_node_map){       
-        // Create a vector of points for the filter
+    #if defined(PARALLEL)
+    #pragma omp parallel for
+    #endif
+    for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
+        const auto& pair = filter_nodes[filter_idx];
         std::vector<std::vector<datatype>> small_points;
-        for(int node : pair.second){
+        
+        for(int node : pair.second) {
             small_points.push_back(this->node_to_point_map[node]);
         }
 
-        // Create a new graph for the filter
-        ANN<datatype> *small_graph = new ANN<datatype>(small_points);
+        ANN<datatype>* small_graph = new ANN<datatype>(small_points);
         small_graph->Vamana(alpha, L_small, R_small);
-        
-        // Stitch the small graph to the main graph 
-        for(size_t i = 0; i < small_points.size(); i++){
+
+        // Pre-collect all edges to add
+        std::vector<std::pair<int, int>> edges_to_add;
+        for(size_t i = 0; i < small_points.size(); i++) {
             int node = pair.second[i];
             std::vector<int> neighbours;
             small_graph->neighbourNodes(int(i), neighbours);
+            
+            for(int neighbour : neighbours) {
+                edges_to_add.emplace_back(node, pair.second[neighbour]);
+            }
+        }
 
-            // Critical Section when adding edges to main graph
-            for(int neighbour : neighbours){
-                this->G->addEdge(node, pair.second[neighbour]);
+        // Add edges in a single critical section
+        #if defined(PARALLEL)
+        #pragma omp critical
+        #endif
+        {
+            for(const auto& edge : edges_to_add) {
+                this->G->addEdge(edge.first, edge.second);
             }
         }
 
         delete small_graph;
-
     }
 
-    // Possible Parallelization Section by changing the loop structure
-    // For each vertice in the graph run robust prune
-    for(size_t i = 0; i < this->node_to_point_map.size(); i++){
-        std::set<int> candidate_set;
-        std::vector<int> neighbours;
-        this->neighbourNodes(i, neighbours);
+    // //Serial Section
+    // // For each vertice in the graph run robust prune
+    // for(size_t i = 0; i < this->node_to_point_map.size(); i++){
+    //     std::set<int> candidate_set;
+    //     std::vector<int> neighbours;
+    //     this->neighbourNodes(i, neighbours);
 
-        for(int neighbour : neighbours){
-            candidate_set.insert(neighbour);
+    //     for(int neighbour : neighbours){
+    //         candidate_set.insert(neighbour);
+    //     }
+
+    //     this->robustPrune(i, candidate_set, alpha, R_stitched, FILTERED);
+    // }
+
+    //Parallelization Section
+    #pragma omp parallel for
+    for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
+        const auto& pair = filter_nodes[filter_idx];
+        for(int node : pair.second) {
+            std::vector<int> neighbours;
+            this->neighbourNodes(node, neighbours);
+            std::set<int> candidate_set;
+            for(int neighbour : neighbours) {
+                candidate_set.insert(neighbour);
+            }
+            this->robustPrune(node, candidate_set, alpha, R_stitched, FILTERED);
         }
-
-        this->robustPrune(i, candidate_set, alpha, R_stitched, FILTERED);
     }
-
 }
 
 template <typename datatype>

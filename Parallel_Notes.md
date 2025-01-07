@@ -1,9 +1,10 @@
 
 # Shory
 ## ann.cpp
-## calculateMedoid 488-494 Possibly parallelize the calculation of distances
-## stitchedVamana 635-659 Parallelize the for loop since each filtere is independent, SOS the addEdge calls to the main graph could potentially be CS
-## stitchedVamana 664-674 Parallelize the loop by changing the structure of the for loop; instead of iterating over all the points iterate first over all the filters and get the points of each filter
+## calculateMedoid 488-494 Possibly parallelize the calculation of distances DONE
+
+## stitchedVamana 635-659 Parallelize the for loop since each filtere is independent, SOS the addEdge calls to the main graph could potentially be CS DONE
+## stitchedVamana 664-674 Parallelize the loop by changing the structure of the for loop; instead of iterating over all the points iterate first over all the filters and get the points of each filter DONE
 ## filteredVamana 700 Parallellize the loop by changing the structure of the for loop to have two loops with the outside being the filters
 
 # Tsefo
