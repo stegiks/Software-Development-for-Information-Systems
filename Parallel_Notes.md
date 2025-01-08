@@ -9,8 +9,8 @@
 
 # Tsefo
 ## ann.cpp
-## Vamana 577 Check whether robustPrune will make iterating the loop not feasible
-## filteredFindMedoid 452-465 parallelize loop with care for the indexing whether or not it is CS
+## Vamana 577 Check whether robustPrune will make iterating the loop not feasible DONE
+## filteredFindMedoid 452-465 parallelize loop with care for the indexing whether or not it is CS DONE
 ## find how to precalculate distances between points before building the graph
 
 ## graph.cpp
