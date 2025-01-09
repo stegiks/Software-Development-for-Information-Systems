@@ -535,7 +535,7 @@ template <typename datatype>
 void ANN<datatype>::randomMedoid(){
     std::size_t n = this->node_to_point_map.size();
     if(n == 0){
-        std::cerr   << "Error : No points in the dataset" << RESET << std::endl;
+        std::cerr << "Error : No points in the dataset" << RESET << std::endl;
         throw std::invalid_argument("randomMedoid: No points in the dataset");
         return;
     }
@@ -551,8 +551,6 @@ template <typename datatype>
 const int& ANN<datatype>::getMedoid(){
     if(!this->cached_medoid.has_value())
         this->calculateMedoid();
-
-    return 0;
 
     return this->cached_medoid.value();
 }
