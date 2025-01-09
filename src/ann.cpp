@@ -726,23 +726,12 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
             temp.push_back(node);
         }
 
+        // Shuffle the nodes
         std::shuffle(temp.begin(), temp.end(), std::default_random_engine(0));
         filter_nodes.push_back(std::make_pair(pair.first, temp));
     }
 
-    // // Get a random permutation of 1 to n
-    // std::vector<int> perm;
-
-    // for(size_t i=0;i<this->node_to_point_map.size();i++){
-    //     perm.push_back(i);
-    // }
-
-    // unsigned seed = 0;
-    // std::shuffle(perm.begin(), perm.end(), std::default_random_engine(seed));
-
     // Neighbours vectors to use inside the loop
-
-    // Possible Parallelization Section by changing the loop structure
     std::vector<int> neighbours;
     std::vector<int> neighbours_j;
     
@@ -776,10 +765,6 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
             this->neighbourNodes(point, neighbours);
 
             for(auto j : neighbours){
-                
-                #if defined(PARALLEL)
-                #pragma omp critical
-                #endif
                 this->G->addEdge(j, point);
 
                 if(this->G->countNeighbours(j) > R){
