@@ -115,28 +115,26 @@ void Graph::printGraph(){
 // If the graph is not regular, enforce it to be regular
 void Graph::enforceRegular(int R){
     
+    size_t upper_limit = this->adj_list.size() < static_cast<size_t>(R) ? this->adj_list.size()-1 : static_cast<size_t>(R);
+    
+    // Thread safe random number generator
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
     #if defined(PARALLEL)
-    #pragma omp parallel for
+    #pragma omp parallel for private(gen)
     #endif
     for(std::size_t i = 0; i < this->adj_list.size(); i++){
         std::unordered_set<int>& neighbours = this->getNeighbours(i);
 
-        // Set upper limit to be the minimum of R and number of nodes
-
         // If node has more than R neighbors, remove random edges
         if(neighbours.size() > static_cast<size_t>(R)){
             std::vector<int> neighboursVec(neighbours.begin(), neighbours.end());
-            std::shuffle(neighboursVec.begin(),neighboursVec.end(),std::default_random_engine(0));
+            std::shuffle(neighboursVec.begin(), neighboursVec.end(), gen);
             for(std::size_t j = R; j < neighboursVec.size(); ++j){
                 neighbours.erase(neighboursVec[j]);
             }
         }
-
-        size_t upper_limit = this->adj_list.size() < static_cast<size_t>(R) ? this->adj_list.size()-1 : static_cast<size_t>(R);
-
-        // Thread safe random number generator
-        std::random_device rd;
-        std::mt19937 gen(rd());
         
         // If node has fewer than R neighbors, add random edges
         while(neighbours.size() < upper_limit){
