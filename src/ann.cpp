@@ -552,6 +552,8 @@ const int& ANN<datatype>::getMedoid(){
     if(!this->cached_medoid.has_value())
         this->calculateMedoid();
 
+    return 0;
+
     return this->cached_medoid.value();
 }
 
@@ -586,8 +588,11 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 
         // Get the point corresponding to the node
         // Create the NNS and Visited sets and pass them as references
-
-        CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+        #if defined(PARALLEL)
+            CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point], true);
+        #else
+            CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+        #endif
         std::set<int, CompareVectors<datatype>> NNS(compare);
         std::unordered_set<int> Visited;
         NNS.insert(this->cached_medoid.value());
