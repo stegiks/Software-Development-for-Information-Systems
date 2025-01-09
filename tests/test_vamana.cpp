@@ -95,7 +95,7 @@ TEST(FilteredVamana, BasicFunct){
     int R = 2;
     float alpha = 1.1;
     
-    ann->filteredVamana(alpha, L, R, 2);
+    ann->filteredVamana(alpha, L, R, 0);
 
     for (size_t i = 0; i < points.size(); ++i) {
         EXPECT_LE(ann->countNeighbours(i), R) << "Degree bound exceeded for node " << i;

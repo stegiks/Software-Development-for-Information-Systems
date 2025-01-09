@@ -9,9 +9,12 @@
 
 # Tsefo
 ## ann.cpp
-## Vamana 577 Check whether robustPrune will make iterating the loop not feasible
-## filteredFindMedoid 452-465 parallelize loop with care for the indexing whether or not it is CS
-## find how to precalculate distances between points before building the graph
+
+## Vamana 577 Check whether robustPrune will make iterating the loop not feasible DONE --> This cannot be parallelized due to many dependencies
+
+## filteredFindMedoid 452-465 parallelize loop with care for the indexing whether or not it is CS DONE --> This does not give any speedup because of the overhead from critical section in the unordered_map
+
+## find how to precalculate distances between points before building the graph DONE --> Only in Vamana. If we don't have parallelization out of the main loop in filteredVamana then we can parallelize the distance calculation there too.
 
 ## graph.cpp
 ## enforceRegular 118-142 parallelize the for loop with private lists to resolve the CS

@@ -53,7 +53,7 @@ private:
 public:
     // Constructor now takes node-to-point map and a comparison vector
     CompareVectors(const std::vector<std::vector<datatype>>& node_to_point_map, 
-                   const std::vector<datatype>& compare_vector)
+                   const std::vector<datatype>& compare_vector, bool precalculate = false)
         : m_node_to_point_map(node_to_point_map), m_compare_vector(compare_vector), dimension(compare_vector.size()){
             if(m_node_to_point_map.empty()){
                 throw std::invalid_argument("Node to point map is empty");
@@ -65,6 +65,14 @@ public:
             
             // Initialize the distance map with negative values
             distance_map.resize(m_node_to_point_map.size(), -1.0f);
+
+            // Precalculate the distances using parallelaization if the flag is set
+            if(precalculate){
+                #pragma omp parallel for
+                for(std::size_t i = 0; i < m_node_to_point_map.size(); i++){
+                    distance_map[i] = calculateDistance(m_node_to_point_map[i], m_compare_vector, dimension);
+                }
+            }
         }
 
     // Operator() compares the distances of points at indices a and b to the comparison vector.

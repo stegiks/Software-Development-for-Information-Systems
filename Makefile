@@ -75,7 +75,7 @@ run_stitch: $(BIN)/main
 
 # Clean
 clean:
-	rm -rf $(BUILD)/* $(BIN)/* *.txt *.out
+	rm -rf $(BUILD)/* $(BIN)/* *.out
 
 # Valgrind
 valgrind: $(BIN)/main

@@ -430,7 +430,7 @@ bool ANN<datatype>::checkFilteredFindMedoid(std::size_t num_of_filters){
 template <typename datatype>
 int ANN<datatype>::getStartNode(float filter){
     if(this->filter_to_start_node.empty()){
-        this->filteredFindMedoid(5);
+        this->filteredFindMedoid();
     }
 
     auto it = this->filter_to_start_node.find(filter);
@@ -442,27 +442,22 @@ int ANN<datatype>::getStartNode(float filter){
 }
 
 template <typename datatype>
-void ANN<datatype>::filteredFindMedoid(int tau){
+void ANN<datatype>::filteredFindMedoid(){
     if(this->node_to_filter_map.empty()){
         throw std::invalid_argument("filteredFindMedoid: Filter map is empty");
         return;
     }
+    
+    // Init a rng
+    std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
 
-    // Iterate through all filter values
-    // Parallelization Section
     for(const auto& pair : this->filter_to_node_map){
         const float& filter = pair.first;
         const std::vector<int>& Pf = pair.second;
 
-        // Randomly take a sample of max tau nodes from Pf
-        // ! CHECK FOR BETTER WAY TO SAMPLE RANDOMLY
-        std::vector<int> Rf;
-        std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
-        std::sample(Pf.begin(), Pf.end(), std::back_inserter(Rf), tau, rng);
-
-        // Select the first node as it is randomly sampled
-        //Possible Critical Section
-        this->filter_to_start_node[filter] = Rf[0];
+        // Pick a random node from Pf to be the start node for the filter 
+        std::size_t index = rng() % Pf.size();
+        this->filter_to_start_node[filter] = Pf[index];
     }
 }
 
@@ -523,7 +518,7 @@ template <typename datatype>
 void ANN<datatype>::randomMedoid(){
     std::size_t n = this->node_to_point_map.size();
     if(n == 0){
-        std::cerr   << "Error : No points in the dataset" << RESET << std::endl;
+        std::cerr << "Error : No points in the dataset" << RESET << std::endl;
         throw std::invalid_argument("randomMedoid: No points in the dataset");
         return;
     }
@@ -574,8 +569,11 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 
         // Get the point corresponding to the node
         // Create the NNS and Visited sets and pass them as references
-
-        CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+        #if defined(PARALLEL)
+            CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point], true);
+        #else
+            CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+        #endif
         std::set<int, CompareVectors<datatype>> NNS(compare);
         std::unordered_set<int> Visited;
         NNS.insert(this->cached_medoid.value());
@@ -711,12 +709,12 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
 }
 
 template <typename datatype>
-void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
+void ANN<datatype>::filteredVamana(float alpha, int L, int R, int z){
     
     this->G->enforceRegular(z);
 
     // Calculate medoid of dataset
-    this->filteredFindMedoid(tau);
+    this->filteredFindMedoid();
 
     // Convert map to vector for OpenMP compatibility
     std::vector<std::pair<int, std::vector<int>>> filter_nodes;

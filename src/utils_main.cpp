@@ -185,7 +185,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             std::cout << BLUE << "Running stitched Vamana algorithm to create the graph" << RESET << std::endl;
             int z = 0;
             #if defined(OPTIMIZED)
-                z = 50;
+                z = R;
             #endif
             auto start = std::chrono::high_resolution_clock::now();
             ann.stitchedVamana(alpha, L, (int)(R / 2), R, z);
@@ -210,10 +210,10 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
             int z = 0;
             #if defined(OPTIMIZED)
-                z = 50;
+                z = R;
             #endif
             auto start = std::chrono::high_resolution_clock::now();
-            ann.filteredVamana(alpha, L, R, 5, z);
+            ann.filteredVamana(alpha, L, R, z);
             auto end = std::chrono::high_resolution_clock::now();
             auto time_used = std::chrono::duration<double>(end - start).count();
             memoryAfter = getMemoryUsage();
@@ -240,7 +240,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         std::cout << GREEN << "Graph loaded successfully" << RESET << std::endl;
 
         // Run filtered find medoid to fill filter_to_start_node used in filteredGreedySearch
-        ann.filteredFindMedoid(5);
+        ann.filteredFindMedoid();
     }
 
     if(do_query){

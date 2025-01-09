@@ -138,7 +138,6 @@ TEST(FilteredFindMedoid, BasicFunctionality){
     };
 
     ANN<int> ann(points, filters);
-    int tau = 2;
-    ann.filteredFindMedoid(tau);
+    ann.filteredFindMedoid();
     EXPECT_TRUE(ann.checkFilteredFindMedoid(5));
 }
