@@ -484,39 +484,22 @@ void ANN<datatype>::calculateMedoid(){
     else
         throw std::invalid_argument("calculateMedoid: No points in the dataset");
 
-
-
-    //Naive Parallel Approach
-    // #pragma omp parallel for schedule(dynamic)
-    // for(std::size_t i = 0; i < n; i++) {
-    //     float local_sum = 0.0;
-    //     for(std::size_t j = 0; j < n; j++) {
-    //         if(i != j) {
-    //             local_sum += calculateDistance(this->node_to_point_map[i], 
-    //                                         this->node_to_point_map[j], dim);
-    //         }
-    //     }
-    //     sum_distances[i] = local_sum;
-    // }
     #if defined(PARALLEL)
-        #pragma omp parallel
-        {
-            std::vector<float> local_sums(n, 0.0);
-            
-            #pragma omp for schedule(static) nowait
-            for(std::size_t i = 0; i < n; i++) {
-                for(std::size_t j = i + 1; j < n; j++) {
-                    float distance = calculateDistance(this->node_to_point_map[i], 
-                                                    this->node_to_point_map[j], dim);
-                    local_sums[i] += distance;
-                    local_sums[j] += distance;
-                }
+        std::vector<float> local_sums(n, 0.0);
+        
+        #pragma omp for schedule(static) nowait
+        for(std::size_t i = 0; i < n; i++) {
+            for(std::size_t j = i + 1; j < n; j++) {
+                float distance = calculateDistance(this->node_to_point_map[i], 
+                                                this->node_to_point_map[j], dim);
+                local_sums[i] += distance;
+                local_sums[j] += distance;
             }
+        }
 
-            #pragma omp critical
-            for(std::size_t i = 0; i < n; i++) {
-                sum_distances[i] += local_sums[i];
-            }
+        #pragma omp critical
+        for(std::size_t i = 0; i < n; i++) {
+            sum_distances[i] += local_sums[i];
         }
     #else
         // Serial Approach
@@ -710,22 +693,9 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
         delete small_graph;
     }
 
-    // //Serial Section
-    // // For each vertice in the graph run robust prune
-    // for(size_t i = 0; i < this->node_to_point_map.size(); i++){
-    //     std::set<int> candidate_set;
-    //     std::vector<int> neighbours;
-    //     this->neighbourNodes(i, neighbours);
-
-    //     for(int neighbour : neighbours){
-    //         candidate_set.insert(neighbour);
-    //     }
-
-    //     this->robustPrune(i, candidate_set, alpha, R_stitched, FILTERED);
-    // }
-
-    //Parallelization Section
+    #if defined(PARALLEL)
     #pragma omp parallel for
+    #endif
     for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
         const auto& pair = filter_nodes[filter_idx];
         for(int node : pair.second) {
@@ -748,64 +718,85 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int tau, int z){
     // Calculate medoid of dataset
     this->filteredFindMedoid(tau);
 
-    // Get a random permutation of 1 to n
-    std::vector<int> perm;
+    // Convert map to vector for OpenMP compatibility
+    std::vector<std::pair<int, std::vector<int>>> filter_nodes;
+    for(const auto& pair : this->filter_to_node_map) {
+        std::vector<int> temp;
+        for(int node : pair.second){
+            temp.push_back(node);
+        }
 
-    for(size_t i=0;i<this->node_to_point_map.size();i++){
-        perm.push_back(i);
+        std::shuffle(temp.begin(), temp.end(), std::default_random_engine(0));
+        filter_nodes.push_back(std::make_pair(pair.first, temp));
     }
 
-    unsigned seed = 0;
-    std::shuffle(perm.begin(), perm.end(), std::default_random_engine(seed));
+    // // Get a random permutation of 1 to n
+    // std::vector<int> perm;
+
+    // for(size_t i=0;i<this->node_to_point_map.size();i++){
+    //     perm.push_back(i);
+    // }
+
+    // unsigned seed = 0;
+    // std::shuffle(perm.begin(), perm.end(), std::default_random_engine(seed));
 
     // Neighbours vectors to use inside the loop
-    std::vector<int> neighbours;
-    std::vector<int> neighbours_j;
 
     // Possible Parallelization Section by changing the loop structure
-    for(size_t i = 0; i < this->node_to_point_map.size(); i++){
-        int point = perm[i];
+    std::vector<int> neighbours;
+    std::vector<int> neighbours_j;
+    
+    #if defined(PARALLEL)
+    #pragma omp parallel for private(neighbours, neighbours_j)
+    #endif
+    for(size_t filteridx = 0; filteridx < filter_nodes.size(); filteridx++){
+        for(size_t i = 0; i < filter_nodes[filteridx].second.size(); i++){
+            int point = filter_nodes[filteridx].second[i];
+        
+            CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
+            std::set<int, CompareVectors<datatype>> NNS(compare);
+            std::unordered_set<int> Visited;
 
-        CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
-        std::set<int, CompareVectors<datatype>> NNS(compare);
-        std::unordered_set<int> Visited;
+            int temporary_point = this->filter_to_start_node[this->node_to_filter_map[point]];
+            float filter = this->node_to_filter_map[point];
 
-        int temporary_point = this->filter_to_start_node[this->node_to_filter_map[point]];
-        float filter = this->node_to_filter_map[point];
+            NNS.insert(temporary_point);
 
-        NNS.insert(temporary_point);
+            // Return k closest points to Xq (point) and then with robust find "better" neighbours
+            this->filteredGreedySearch(temporary_point, 1, L, filter, NNS, Visited, compare);
 
-        // Return k closest points to Xq (point) and then with robust find "better" neighbours
-        this->filteredGreedySearch(temporary_point, 1, L, filter, NNS, Visited, compare);
-
-        // Transform Visited to a set with a custom comparator
-        std::set<int, CompareVectors<datatype>> VisitedRobust(compare);
-        for(auto it = Visited.begin(); it != Visited.end(); it++){
-            VisitedRobust.insert(*it);
-        }
-
-        this->robustPrune(point, VisitedRobust, alpha, R, FILTERED);
-
-        this->neighbourNodes(point, neighbours);
-
-        for(auto j : neighbours){
-            
-            this->G->addEdge(j, point);
-
-            if(this->G->countNeighbours(j) > R){
-                // Call robust for j neighbours
-                std::set<int, CompareVectors<datatype>> temp(compare);
-
-                this->neighbourNodes(j, neighbours_j);
-                for(auto k : neighbours_j){
-                    temp.insert(k);
-                }
-
-                neighbours_j.clear();
-                this->robustPrune(j, temp, alpha, R, FILTERED);
+            // Transform Visited to a set with a custom comparator
+            std::set<int, CompareVectors<datatype>> VisitedRobust(compare);
+            for(auto it = Visited.begin(); it != Visited.end(); it++){
+                VisitedRobust.insert(*it);
             }
+
+            this->robustPrune(point, VisitedRobust, alpha, R, FILTERED);
+
+            this->neighbourNodes(point, neighbours);
+
+            for(auto j : neighbours){
+                
+                #if defined(PARALLEL)
+                #pragma omp critical
+                #endif
+                this->G->addEdge(j, point);
+
+                if(this->G->countNeighbours(j) > R){
+                    // Call robust for j neighbours
+                    std::set<int, CompareVectors<datatype>> temp(compare);
+
+                    this->neighbourNodes(j, neighbours_j);
+                    for(auto k : neighbours_j){
+                        temp.insert(k);
+                    }
+
+                    neighbours_j.clear();
+                    this->robustPrune(j, temp, alpha, R, FILTERED);
+                }
+            }
+            neighbours.clear();
         }
-        neighbours.clear();
     }
 }
 
