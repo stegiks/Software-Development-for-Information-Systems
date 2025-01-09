@@ -114,7 +114,10 @@ void Graph::printGraph(){
 
 // If the graph is not regular, enforce it to be regular
 void Graph::enforceRegular(int R){
-    // Possible Parallelization Section
+    
+    #if defined(PARALLEL)
+    #pragma omp parallel for
+    #endif
     for(std::size_t i = 0; i < this->adj_list.size(); i++){
         std::unordered_set<int>& neighbours = this->getNeighbours(i);
 
@@ -130,10 +133,14 @@ void Graph::enforceRegular(int R){
         }
 
         size_t upper_limit = this->adj_list.size() < static_cast<size_t>(R) ? this->adj_list.size()-1 : static_cast<size_t>(R);
+
+        // Thread safe random number generator
+        std::random_device rd;
+        std::mt19937 gen(rd());
         
         // If node has fewer than R neighbors, add random edges
         while(neighbours.size() < upper_limit){
-            std::size_t j = rand() % this->adj_list.size();
+            std::size_t j = gen() % this->adj_list.size();
             if(i != j && neighbours.find(j) == neighbours.end()){
                 neighbours.insert(j);
             }
