@@ -258,30 +258,50 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         int total_correct_guesses = 0;
         int total_gt_size = 0;
 
-        auto start = std::chrono::high_resolution_clock::now();
-        for(std::size_t i = 0; i < queries.size(); i++){
-            int k = (int)gt[i].size();
+        std::size_t size_q = 0;
+        if(queries.size() > 500) size_q = 500;
+
+        // Seperate filtered from unfiltered queries
+        std::vector<std::vector<int>> gt_filtered;
+        std::vector<std::vector<int>> gt_unfiltered;
+        std::vector<std::vector<float>> queries_filtered;
+        std::vector<std::vector<float>> queries_unfiltered;
+        std::vector<float> query_category_values_filtered;
+        std::vector<float> query_category_values_unfiltered;
+
+        for(std::size_t i = 0; i < size_q; i++){
+            if(query_category_values[i] == -1){
+                gt_unfiltered.push_back(gt[i]);
+                queries_unfiltered.push_back(queries[i]);
+                query_category_values_unfiltered.push_back(query_category_values[i]);
+            }
+            else{
+                gt_filtered.push_back(gt[i]);
+                queries_filtered.push_back(queries[i]);
+                query_category_values_filtered.push_back(query_category_values[i]);
+            }
+        }
+
+        // Run filtered queries
+        std::size_t size_filtered = queries_filtered.size();
+        auto start_filtered = std::chrono::high_resolution_clock::now();
+        for(std::size_t i = 0; i < size_filtered; i++){
+            int k = (int)gt_filtered[i].size();
             if(k > 100){
                 std::cout << YELLOW << "Ground truth has more than 100 points" << RESET << std::endl;
             }
 
-            CompareVectors<float> compare(ann.node_to_point_map, queries[i]);
+            CompareVectors<float> compare(ann.node_to_point_map, queries_filtered[i]);
             std::set<int, CompareVectors<float>> NNS(compare);
             std::unordered_set<int> Visited;
 
-            // Call filtered Greedy
-            if(query_category_values[i] == -1){
-                ann.filteredGreedySearch(-1, k, L, -1, NNS, Visited, compare);
-            }
-            else{
-                int start_node = ann.getStartNode(query_category_values[i]);
-                if(start_node == -1) continue;
-                ann.filteredGreedySearch(start_node, k, L, query_category_values[i], NNS, Visited, compare);
-            }
+            int start_node = ann.getStartNode(query_category_values_filtered[i]);
+            if(start_node == -1) continue;
+            ann.filteredGreedySearch(start_node, k, L, query_category_values_filtered[i], NNS, Visited, compare);
 
             // Search in the ground truth
             int correct = 0;
-            for(const int& index : gt[i]){
+            for(const int& index : gt_filtered[i]){
                 if(NNS.find(index) != NNS.end()){
                     correct++;
                 }
@@ -290,12 +310,49 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             total_correct_guesses += correct;
             total_gt_size += k;
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        auto time_query = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        auto queries_per_second = (float)queries.size() / time_query * 1000;
+        auto end_filtered = std::chrono::high_resolution_clock::now();
+        auto time_query_filtered = std::chrono::duration_cast<std::chrono::milliseconds>(end_filtered - start_filtered).count();
+        auto queries_per_second_filtered = (float)queries_filtered.size() / time_query_filtered * 1000;
 
-        float total_recall = (float)total_correct_guesses / total_gt_size * 100;
-        std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
+        float total_recall_filtered = (float)total_correct_guesses / total_gt_size * 100;
+        std::cout << BLUE << "Total recall for filtered queries : " << RESET << total_recall_filtered << "%" << std::endl;
+
+        // Run unfiltered queries
+        total_correct_guesses = 0;
+        total_gt_size = 0;
+
+        std::size_t size_unfiltered = queries_unfiltered.size();
+        auto start_unfiltered = std::chrono::high_resolution_clock::now();
+        for(std::size_t i = 0; i < size_unfiltered; i++){
+            int k = (int)gt_unfiltered[i].size();
+            if(k > 100){
+                std::cout << YELLOW << "Ground truth has more than 100 points" << RESET << std::endl;
+            }
+
+            CompareVectors<float> compare(ann.node_to_point_map, queries_unfiltered[i]);
+            std::set<int, CompareVectors<float>> NNS(compare);
+            std::unordered_set<int> Visited;
+
+            // Call unfiltered Greedy
+            ann.filteredGreedySearch(-1, k, L, -1, NNS, Visited, compare);
+
+            // Search in the ground truth
+            int correct = 0;
+            for(const int& index : gt_unfiltered[i]){
+                if(NNS.find(index) != NNS.end()){
+                    correct++;
+                }
+            }
+            
+            total_correct_guesses += correct;
+            total_gt_size += k;
+        }
+        auto end_unfiltered = std::chrono::high_resolution_clock::now();
+        auto time_query_unfiltered = std::chrono::duration_cast<std::chrono::milliseconds>(end_unfiltered - start_unfiltered).count();
+        auto queries_per_second_unfiltered = (float)queries_unfiltered.size() / time_query_unfiltered * 1000;
+
+        float total_recall_unfiltered = (float)total_correct_guesses / total_gt_size * 100;
+        std::cout << BLUE << "Total recall for unfiltered queries : " << RESET << total_recall_unfiltered << "%" << std::endl;
 
         if(!file_path_log.empty()){
             std::ofstream log_file(file_path_log, std::ios::app);
@@ -305,7 +362,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
 
             std::string dataset_name = (base.size() <= size_t(10000)) ? "small" : "large";
 
-            log_file << '\t' << queries_per_second << '\t' << algo << '\t' << dataset_name << '\t' << total_recall << std::endl;
+            log_file << '\t' << queries_per_second_filtered << '\t' << queries_per_second_unfiltered << '\t' << algo << '\t' << dataset_name << '\t' << total_recall_filtered << '\t' << total_recall_unfiltered << std::endl;
             log_file.close();
         }
     }
