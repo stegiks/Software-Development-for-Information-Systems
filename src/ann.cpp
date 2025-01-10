@@ -479,7 +479,7 @@ void ANN<datatype>::calculateMedoid(){
     else
         throw std::invalid_argument("calculateMedoid: No points in the dataset");
 
-    #if defined(PARALLEL)
+    #if defined(PARALLEL2)
         std::vector<float> local_sums(n, 0.0);
         
         #pragma omp for schedule(static) nowait

@@ -14,6 +14,8 @@ CXX := g++
 # Optimization flag
 OPTIMIZED := 0
 PARALLEL := 0
+PARALLEL1 := 0
+PARALLEL2 := 0
 
 # Flags
 CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -lstdc++fs -O3 -march=native -flto -fopenmp # After -std=c++17 optimization flags
@@ -27,6 +29,15 @@ endif
 ifeq ($(PARALLEL), 1)
 	CFLAGS += -DPARALLEL
 endif
+
+ifeq ($(PARALLEL1), 1)
+	CFLAGS += -DPARALLEL1
+endif
+
+ifeq ($(PARALLEL2), 1)
+	CFLAGS += -DPARALLEL2
+endif
+
 # Path to local google test libraries
 LDFLAGS := ./googletest/build/lib/libgtest.a ./googletest/build/lib/libgtest_main.a -pthread
 

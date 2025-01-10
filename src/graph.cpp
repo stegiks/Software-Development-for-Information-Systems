@@ -115,13 +115,13 @@ void Graph::printGraph(){
 // If the graph is not regular, enforce it to be regular
 void Graph::enforceRegular(int R){
     
-    size_t upper_limit = this->adj_list.size() < static_cast<size_t>(R) ? this->adj_list.size()-1 : static_cast<size_t>(R);
+    size_t upper_limit = this->adj_list.size() <= static_cast<size_t>(R) ? this->adj_list.size()-1 : static_cast<size_t>(R);
     
     // Thread safe random number generator
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    #if defined(PARALLEL)
+    #if defined(PARALLEL1)
     #pragma omp parallel for private(gen)
     #endif
     for(std::size_t i = 0; i < this->adj_list.size(); i++){

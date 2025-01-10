@@ -5,11 +5,22 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-// Author: Theodoris Mallios
-long getMemoryUsage(){
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    return usage.ru_maxrss;
+long getPeakMemoryUsage() {
+    std::ifstream status_file("/proc/self/status");
+    std::string line;
+
+    while(std::getline(status_file, line)){
+        if(line.find("VmPeak:") == 0){
+            std::istringstream iss(line);
+            std::string key;
+            long value;
+            std::string unit;
+            iss >> key >> value >> unit;
+            return value; // Value is in KB
+        }
+    }
+
+    return 0;
 }
 
 std::string findExtension(const std::string& file_path){
@@ -175,7 +186,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
-    memoryBefore = getMemoryUsage();
+    memoryBefore = getPeakMemoryUsage();
     ANN<float> ann(base, base_category_values);
     
 
@@ -185,13 +196,13 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             std::cout << BLUE << "Running stitched Vamana algorithm to create the graph" << RESET << std::endl;
             int z = 0;
             #if defined(OPTIMIZED)
-                z = R;
+                z = (R / 2);
             #endif
             auto start = std::chrono::high_resolution_clock::now();
             ann.stitchedVamana(alpha, L, (int)(R / 2), R, z);
             auto end = std::chrono::high_resolution_clock::now();
-            auto time_used = std::chrono::duration<double>(end - start).count();
-            memoryAfter = getMemoryUsage();
+            auto time_indexing = std::chrono::duration<double>(end - start).count();
+            memoryAfter = getPeakMemoryUsage();
             memoryUsed = memoryAfter - memoryBefore;
 
             if(!file_path_log.empty()){
@@ -200,7 +211,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
                     throw std::runtime_error("Could not open file to save log");
                 }
 
-                log_file << alpha << '\t' << L << '\t' << R << '\t' << time_used << '\t' << memoryUsed;
+                log_file << alpha << '\t' << L << '\t' << R << '\t' << time_indexing << '\t' << memoryUsed;
                 log_file.close();
             }
 
@@ -215,8 +226,8 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
             auto start = std::chrono::high_resolution_clock::now();
             ann.filteredVamana(alpha, L, R, z);
             auto end = std::chrono::high_resolution_clock::now();
-            auto time_used = std::chrono::duration<double>(end - start).count();
-            memoryAfter = getMemoryUsage();
+            auto time_indexing = std::chrono::duration<double>(end - start).count();
+            memoryAfter = getPeakMemoryUsage();
             memoryUsed = memoryAfter - memoryBefore;
 
             std::cout << GREEN << "Filtered Vamana Graph executed successfully" << RESET << std::endl;
@@ -226,7 +237,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
                     throw std::runtime_error("Could not open file to save log");
                 }
 
-                log_file << alpha << '\t' << L << '\t' << R << '\t' << time_used << '\t' << memoryUsed;
+                log_file << alpha << '\t' << L << '\t' << R << '\t' << time_indexing << '\t' << memoryUsed;
                 log_file.close();
             }
         
@@ -247,8 +258,12 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         int total_correct_guesses = 0;
         int total_gt_size = 0;
 
+        auto start = std::chrono::high_resolution_clock::now();
         for(std::size_t i = 0; i < queries.size(); i++){
             int k = (int)gt[i].size();
+            if(k > 100){
+                std::cout << YELLOW << "Ground truth has more than 100 points" << RESET << std::endl;
+            }
 
             CompareVectors<float> compare(ann.node_to_point_map, queries[i]);
             std::set<int, CompareVectors<float>> NNS(compare);
@@ -272,22 +287,25 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
                 }
             }
             
-            float recall = (float)correct / k * 100;
-            std::cout << "Query " << i << " with category value " << query_category_values[i] << " recall : " << recall << "%" << std::endl;
-            
             total_correct_guesses += correct;
             total_gt_size += k;
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        auto time_query = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        auto queries_per_second = (float)queries.size() / time_query * 1000;
 
         float total_recall = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
+
         if(!file_path_log.empty()){
             std::ofstream log_file(file_path_log, std::ios::app);
             if(!log_file){
                 throw std::runtime_error("Could not open file to save log");
             }
 
-            log_file <<'\t' << total_recall << std::endl;
+            std::string dataset_name = (base.size() <= size_t(10000)) ? "small" : "large";
+
+            log_file << '\t' << queries_per_second << '\t' << algo << '\t' << dataset_name << '\t' << total_recall << std::endl;
             log_file.close();
         }
     }
@@ -357,7 +375,7 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
     std::cout << GREEN << "Files parsed successfully" << RESET << std::endl;
 
     // Init ANN class and run Vamana algorithm
-    memoryBefore = getMemoryUsage();
+    memoryBefore = getPeakMemoryUsage();
     ANN<datatype> ann(base, (size_t)R);
     std::cout << GREEN << "ANN class initialized successfully" << RESET << std::endl;
     
@@ -368,9 +386,9 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
         auto start = std::chrono::high_resolution_clock::now();
         ann.Vamana(alpha, L, R);
         auto end = std::chrono::high_resolution_clock::now();
-        memoryAfter = getMemoryUsage();
+        memoryAfter = getPeakMemoryUsage();
         memoryUsed = memoryAfter - memoryBefore;
-        auto time_used = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        auto time_indexing = std::chrono::duration<double>(end - start).count();
 
         if(!file_path_log.empty()){
             // Open the log file
@@ -379,7 +397,7 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
                 throw std::runtime_error("Could not open log file");
             }
             // Write the time used to the log file
-            log_file << alpha << '\t' << L << '\t' << R << '\t' << time_used << '\t' << memoryUsed;
+            log_file << alpha << '\t' << L << '\t' << R << '\t' << time_indexing << '\t' << memoryUsed;
             log_file.close();
         }
         std::cout << GREEN << "Vamana Graph executed successfully" << RESET << std::endl;
@@ -395,6 +413,7 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
         int total_correct_guesses = 0;
         int total_gt_size = 0;
 
+        auto start = std::chrono::high_resolution_clock::now();
         for(std::size_t i = 0; i < query.size(); i++){
             int k = (int)gt[i].size();
 
@@ -412,12 +431,13 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
                     correct++;
                 }
             }
-            float recall = (float)correct / k * 100;
-            std::cout << "Query " << i << " recall : " << recall << "%" << std::endl;
 
             total_correct_guesses += correct;
             total_gt_size += k; 
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        auto time_query = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        auto queries_per_second = (float)query.size() / time_query * 1000;
 
         float total_recall = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
@@ -429,7 +449,10 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
                 throw std::runtime_error("Could not open log file");
             }
             // Write the time used to the log file
-            log_file << '\t' << total_recall << std::endl;
+
+            std::string dataset_size = (base.size() <= size_t(10000)) ? "small" : "large";
+
+            log_file << '\t' << queries_per_second << '\t' << "regular" << '\t' << dataset_size << '\t' << total_recall << std::endl;
             log_file.close();
         }
 

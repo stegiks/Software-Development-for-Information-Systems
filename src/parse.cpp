@@ -9,7 +9,6 @@ void parseDataVector(const std::string& path, std::vector<float>& vec_with_categ
 
     u_int32_t num_points;
     file.read((char*)&num_points, sizeof(u_int32_t));
-    std::cout << "Number of points: " << num_points << std::endl;
 
     // Preallocate memory for the vectors, because we know the size
     vec_with_category_values.resize(num_points);
