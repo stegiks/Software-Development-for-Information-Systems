@@ -310,7 +310,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         }
         auto end_filtered = std::chrono::high_resolution_clock::now();
         auto time_query_filtered = std::chrono::duration_cast<std::chrono::milliseconds>(end_filtered - start_filtered).count();
-        auto queries_per_second_filtered = (float)queries_filtered.size() / time_query_filtered * 1000;
+        auto queries_per_second_filtered = (float)size_filtered / time_query_filtered * 1000;
 
         float total_recall_filtered = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall for filtered queries : " << RESET << total_recall_filtered << "%" << std::endl;
@@ -347,7 +347,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         }
         auto end_unfiltered = std::chrono::high_resolution_clock::now();
         auto time_query_unfiltered = std::chrono::duration_cast<std::chrono::milliseconds>(end_unfiltered - start_unfiltered).count();
-        auto queries_per_second_unfiltered = (float)queries_unfiltered.size() / time_query_unfiltered * 1000;
+        auto queries_per_second_unfiltered = (float)size_unfiltered / time_query_unfiltered * 1000;
 
         float total_recall_unfiltered = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall for unfiltered queries : " << RESET << total_recall_unfiltered << "%" << std::endl;
