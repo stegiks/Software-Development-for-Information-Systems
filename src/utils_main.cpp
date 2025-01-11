@@ -257,6 +257,7 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
 
         std::size_t size_q = 0;
         if(queries.size() > 500) size_q = 500;
+        else size_q = queries.size();
 
         // Seperate filtered from unfiltered queries
         std::vector<std::vector<int>> gt_filtered;
@@ -467,8 +468,12 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
         int total_correct_guesses = 0;
         int total_gt_size = 0;
 
+        std::size_t size_q = 0;
+        if(query.size() > 500) size_q = 500;
+        else size_q = query.size();
+
         auto start = std::chrono::high_resolution_clock::now();
-        for(std::size_t i = 0; i < query.size(); i++){
+        for(std::size_t i = 0; i < size_q; i++){
             int k = (int)gt[i].size();
 
             CompareVectors<datatype> compare(ann.node_to_point_map, query[i]);
@@ -491,7 +496,7 @@ void processVecFormat(const std::string& file_path_base, const std::string& file
         }
         auto end = std::chrono::high_resolution_clock::now();
         auto time_query = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        auto queries_per_second = (float)query.size() / time_query * 1000;
+        auto queries_per_second = (float)size_q / time_query * 1000;
 
         float total_recall = (float)total_correct_guesses / total_gt_size * 100;
         std::cout << BLUE << "Total recall : " << RESET << total_recall << "%" << std::endl;
