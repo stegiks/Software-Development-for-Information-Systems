@@ -18,7 +18,7 @@ def compile_with_flags(flags):
     subprocess.run(["make", "clean"], check=True, cwd=root_dir)
     
     # Construct make command with flags
-    make_cmd = ["make", "OPTIMIZED=1"]
+    make_cmd = ["make", "OPTIMIZED=1", "PARALLEL0=1"]
     for flag_name, flag_value in flags.items():
         make_cmd.append(f"{flag_name}={flag_value}")
     
@@ -36,8 +36,7 @@ def main():
 
     # Define optimization flags
     optimization_flags = [
-        {"PARALLEL0": 0},
-        {"PARALLEL0": 1},
+        {"PARALLEL1": 1},
     ]
 
     # Define algorithms
@@ -62,7 +61,7 @@ def main():
                                     "-a", str(alpha),
                                     "-R", str(R),
                                     "-L", str(L),
-                                    "-log", f"../logs/log_PARALLEL0_flag{flags['PARALLEL0']}_{run}.txt"
+                                    "-log", f"../logs/log_PARALLEL1_flag{flags['PARALLEL1']}_{run}.txt"
                                 ]
                             else:
                                 # Filtered or Stitched Vamana
@@ -76,7 +75,7 @@ def main():
                                     "-R", str(R),
                                     "-L", str(L),
                                     "-algo", algo,
-                                    "-log", f"../logs/log_PARALLEL0_flag{flags['PARALLEL0']}_{run}.txt"
+                                    "-log", f"../logs/log_PARALLEL1_flag{flags['PARALLEL1']}_{run}.txt"
                                 ]
                             try:
                                 output, error = run_process(args_list, executable_dir)
