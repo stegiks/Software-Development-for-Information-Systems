@@ -569,7 +569,7 @@ void ANN<datatype>::Vamana(float alpha, int L, int R){
 
         // Get the point corresponding to the node
         // Create the NNS and Visited sets and pass them as references
-        #if defined(PARALLEL)
+        #if defined(PARALLEL0)
             CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point], true);
         #else
             CompareVectors<datatype> compare(this->node_to_point_map, this->node_to_point_map[point]);
@@ -652,7 +652,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
         filter_nodes.push_back(pair);
     }
 
-    #if defined(PARALLEL)
+    #if defined(PARALLEL0)
     #pragma omp parallel for
     #endif
     for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
@@ -679,7 +679,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
         }
 
         // Add edges in a single critical section
-        #if defined(PARALLEL)
+        #if defined(PARALLEL0)
         #pragma omp critical
         #endif
         {
@@ -691,7 +691,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
         delete small_graph;
     }
 
-    #if defined(PARALLEL)
+    #if defined(PARALLEL0)
     #pragma omp parallel for
     #endif
     for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
@@ -733,7 +733,7 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int z){
     std::vector<int> neighbours;
     std::vector<int> neighbours_j;
     
-    #if defined(PARALLEL)
+    #if defined(PARALLEL0)
     #pragma omp parallel for private(neighbours, neighbours_j)
     #endif
     for(size_t filteridx = 0; filteridx < filter_nodes.size(); filteridx++){

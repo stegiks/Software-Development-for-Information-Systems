@@ -220,9 +220,6 @@ void processBinFormat(const std::string& file_path_base, const std::string& file
         else{
             std::cout << BLUE << "Running filtered Vamana algorithm to create the graph" << RESET << std::endl;
             int z = 0;
-            #if defined(OPTIMIZED)
-                z = R;
-            #endif
             auto start = std::chrono::high_resolution_clock::now();
             ann.filteredVamana(alpha, L, R, z);
             auto end = std::chrono::high_resolution_clock::now();

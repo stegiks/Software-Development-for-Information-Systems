@@ -13,7 +13,7 @@ CXX := g++
 
 # Optimization flag
 OPTIMIZED := 0
-PARALLEL := 0
+PARALLEL0 := 0
 PARALLEL1 := 0
 PARALLEL2 := 0
 
@@ -26,8 +26,8 @@ ifeq ($(OPTIMIZED), 1)
 endif
 
 # Detect if parallel flag is set
-ifeq ($(PARALLEL), 1)
-	CFLAGS += -DPARALLEL
+ifeq ($(PARALLEL0), 1)
+	CFLAGS += -DPARALLEL0
 endif
 
 ifeq ($(PARALLEL1), 1)
