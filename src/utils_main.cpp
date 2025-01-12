@@ -93,6 +93,8 @@ void calculateGroundTruth(const std::vector<std::vector<datatype>>& queries,
     ground_truth.resize(queries.size());
 
     std::size_t n = queries.size();
+
+    #pragma omp parallel for 
     for(std::size_t i = 0; i < n; i++){
         const auto& query = queries[i];
         std::vector<std::pair<float, int>> points_for_x_filter;
