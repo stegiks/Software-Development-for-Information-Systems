@@ -68,7 +68,7 @@ public:
 
             // Precalculate the distances using parallelaization if the flag is set
             if(precalculate){
-                #pragma omp parallel for
+                #pragma omp parallel for schedule(dynamic)
                 for(std::size_t i = 0; i < m_node_to_point_map.size(); i++){
                     distance_map[i] = calculateDistance(m_node_to_point_map[i], m_compare_vector, dimension);
                 }

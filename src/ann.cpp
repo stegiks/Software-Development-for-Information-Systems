@@ -653,7 +653,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
     }
 
     #if defined(PARALLEL0)
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic)
     #endif
     for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
         const auto& pair = filter_nodes[filter_idx];
@@ -692,7 +692,7 @@ void ANN<datatype>::stitchedVamana(float alpha, int L_small, int R_small, int R_
     }
 
     #if defined(PARALLEL0)
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic)
     #endif
     for(size_t filter_idx = 0; filter_idx < filter_nodes.size(); filter_idx++) {
         const auto& pair = filter_nodes[filter_idx];
@@ -734,7 +734,7 @@ void ANN<datatype>::filteredVamana(float alpha, int L, int R, int z){
     std::vector<int> neighbours_j;
     
     #if defined(PARALLEL0)
-    #pragma omp parallel for private(neighbours, neighbours_j)
+    #pragma omp parallel for private(neighbours, neighbours_j) schedule(dynamic)
     #endif
     for(size_t filteridx = 0; filteridx < filter_nodes.size(); filteridx++){
         for(size_t i = 0; i < filter_nodes[filteridx].second.size(); i++){
