@@ -12,10 +12,9 @@ CC := gcc
 CXX := g++
 
 # Optimization flag
-OPTIMIZED := 0
-PARALLEL0 := 0
+OPTIMIZED := 1
+PARALLEL0 := 1
 PARALLEL1 := 0
-PARALLEL2 := 0
 
 # Flags
 CFLAGS := -Wall -Wextra -Werror -g -std=c++17 -lstdc++fs -O3 -march=native -flto -fopenmp # After -std=c++17 optimization flags
